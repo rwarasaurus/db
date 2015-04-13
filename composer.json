@@ -1,4 +1,20 @@
 {
+	"name": "rwarasaurus/db",
+	"description": "DBAL",
+	"license": "GPL-3.0",
+	"version": "0.0.1",
+	"type": "library",
+	"authors": [
+		{
+			"name": "Kieron",
+			"email": "hello@madebykieron.co.uk",
+			"homepage": "http://madebykieron.co.uk",
+			"role": "Developer"
+		}
+	],
+	"require": {
+		"php": ">=5.5"
+	},
 	"require-dev": {
 		"phpspec/phpspec": "~2.0",
 		"phpunit/phpunit": "4.8.*@dev"
@@ -7,5 +23,6 @@
 		"psr-4": {
 			"": "src"
 		}
-	}
+	},
+	"minimum-stability": "dev"
 }

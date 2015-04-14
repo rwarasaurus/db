@@ -2,6 +2,8 @@
 
 namespace DB;
 
+use DB\Contracts\Row as RowInterface;
+
 class Table {
 
 	/**
@@ -40,11 +42,15 @@ class Table {
 	 * @param string
 	 * @param string
 	 */
-	public function __construct(Query $query, Row $prototype, $name, $primary = 'id') {
-		$this->name = $name;
-		$this->primary = $primary;
+	public function __construct(Query $query, RowInterface $prototype, $name = null, $primary = null) {
 		$this->query = $query;
 		$this->prototype = $prototype;
+
+		// set table name
+		$this->name = $name ?: $this->name;
+
+		// set primary key column name
+		$this->primary = $primary ?: $this->primary;
 	}
 
 	/**
@@ -55,7 +61,7 @@ class Table {
 	 * @return object
 	 */
 	public function __call($method, array $args) {
-		return call_user_func_array([$this->query->table($this->name)->hydrate($this->prototype), $method], $args);
+		return call_user_func_array([$this->query->table($this->name)->prototype($this->prototype), $method], $args);
 	}
 
 	/**
@@ -64,7 +70,7 @@ class Table {
 	 * @param object
 	 * @return bool
 	 */
-	public function save(Row $row) {
+	public function save(RowInterface $row) {
 		$data = $row->toArray();
 
 		if(false === array_key_exists($this->primary, $data)) {

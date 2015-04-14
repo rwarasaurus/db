@@ -2,7 +2,9 @@
 
 namespace DB;
 
-class Row {
+use DB\Contracts\Row as RowInterface;
+
+class Row implements RowInterface {
 
 	/**
 	 * Row attributes

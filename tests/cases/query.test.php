@@ -9,9 +9,6 @@ class QueryTest extends PHPUnit_Framework_TestCase {
 		$this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		$this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
-		$this->pdo->exec('PRAGMA synchronous = OFF');
-		$this->pdo->exec('PRAGMA journal_mode = OFF');
-
 		$this->pdo->exec('CREATE TABLE [books] ([id] integer PRIMARY KEY AUTOINCREMENT, [title] text, [author] integer)');
 
 		$stm = $this->pdo->prepare('INSERT INTO [books] ([id], [title], [author]) VALUES(?, ?, ?)');
@@ -86,14 +83,14 @@ class QueryTest extends PHPUnit_Framework_TestCase {
 		$q = new Query($this->pdo);
 
 		$r = $q->table('books')->fetch();
-		$this->assertEquals('1', $r['id']);
+		$this->assertEquals('1', $r->id);
 	}
 
 	public function testGet()  {
 		$q = new Query($this->pdo);
 
 		$r = $q->table('books')->get();
-		$this->assertEquals('1', $r[0]['id']);
+		$this->assertEquals('1', $r[0]->id);
 	}
 
 	public function testCount()  {
@@ -113,7 +110,7 @@ class QueryTest extends PHPUnit_Framework_TestCase {
 	public function testHydrateModel()  {
 		$q = new Query($this->pdo);
 		$p = new DB\Row;
-		$r = $q->hydrate($p)->table('books')->fetch();
+		$r = $q->prototype($p)->table('books')->fetch();
 		$this->assertEquals('1', $r->id);
 	}
 
@@ -155,21 +152,21 @@ class QueryTest extends PHPUnit_Framework_TestCase {
 	public function testRowArray()  {
 		$q = new Query($this->pdo);
 		$p = new DB\Row;
-		$r = $q->hydrate($p)->table('books')->fetch();
+		$r = $q->prototype($p)->table('books')->fetch();
 		$this->assertInternalType('array', $r->toArray());
 	}
 
 	public function testRowJson()  {
 		$q = new Query($this->pdo);
 		$p = new DB\Row;
-		$r = $q->hydrate($p)->table('books')->fetch();
+		$r = $q->prototype($p)->table('books')->fetch();
 		$this->assertEquals(json_encode($r->toArray()), $r->toJson());
 	}
 
 	public function testRowString()  {
 		$q = new Query($this->pdo);
 		$p = new DB\Row;
-		$r = $q->hydrate($p)->table('books')->fetch();
+		$r = $q->prototype($p)->table('books')->fetch();
 		$this->assertEquals(json_encode($r->toArray()), (string) $r);
 	}
 

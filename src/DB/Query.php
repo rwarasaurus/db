@@ -2,9 +2,16 @@
 
 namespace DB;
 
+use PDO;
+use PDOException;
+use ErrorException;
+use DB\Contracts\Row as RowInterface;
+use DB\Traits\Builder as BuilderTrait;
+use DB\Traits\Profile as ProfileTrait;
+
 class Query {
 
-	use Traits\Builder, Traits\Profile;
+	use BuilderTrait, ProfileTrait;
 
 	protected $pdo;
 
@@ -12,7 +19,7 @@ class Query {
 
 	protected $supported = ['mysql', 'sqlite'];
 
-	public function __construct(\PDO $pdo, Row $prototype = null) {
+	public function __construct(PDO $pdo, RowInterface $prototype = null) {
 		$this->pdo = $pdo;
 		$this->prototype = null === $prototype ? new Row : $prototype;
 	}
@@ -30,8 +37,8 @@ class Query {
 				$this->stop($sql, $values, $sth->rowCount());
 			}
 		}
-		catch(\PDOException $e) {
-			throw new \ErrorException($e->getMessage() . ' SQL: ' . $sql . ' PARAMS: ' . var_export($values, true));
+		catch(PDOException $e) {
+			throw new ErrorException($e->getMessage() . ' SQL: ' . $sql . ' PARAMS: ' . var_export($values, true));
 		}
 
 		$this->reset();
@@ -39,13 +46,13 @@ class Query {
 		return $sth;
 	}
 
-	public function hydrate(Row $prototype) {
+	public function prototype(RowInterface $prototype) {
 		$this->prototype = $prototype;
 
 		return $this;
 	}
 
-	public function model(array $row) {
+	public function hydrate(array $row) {
 		$obj = clone $this->prototype;
 
 		foreach($row as $key => $value) {
@@ -57,16 +64,19 @@ class Query {
 
 	public function get() {
 		$sth = $this->exec($this->getSqlString(), $this->getBindings());
-		$results = $sth->fetchAll(\PDO::FETCH_ASSOC);
+		$results = [];
 
-		return null === $this->prototype ? $results : array_map([$this, 'model'], $results);
+		while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
+			$results[] = $this->hydrate($row);
+		}
+
+		$sth->closeCursor();
+
+		return $results;
 	}
 
 	public function fetch() {
-		$sth = $this->exec($this->getSqlString(), $this->getBindings());
-		$row = $sth->fetch(\PDO::FETCH_ASSOC);
-
-		return null === $this->prototype ? $row : $this->model($row);
+		return count($results = $this->get()) ? $results[0] : false;
 	}
 
 	public function count($column = '*') {

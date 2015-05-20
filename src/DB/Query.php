@@ -76,7 +76,13 @@ class Query {
 	}
 
 	public function fetch() {
-		return count($results = $this->get()) ? $results[0] : false;
+		$results = $this->get();
+
+		return isset($results[0]) ? $results[0] : false;
+	}
+
+	public function col($column = 0) {
+		return $this->exec($this->getSqlString(), $this->values)->fetchColumn();
 	}
 
 	public function count($column = '*') {

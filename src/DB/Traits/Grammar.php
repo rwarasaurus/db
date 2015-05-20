@@ -40,7 +40,7 @@ trait Grammar {
 	}
 
 	protected function wrap($str) {
-		if($str == '*' || strpos($str, '(') !== false) {
+		if($str == '*' || strpos($str, '(') !== false || strpos($str, ')') !== false) {
 			return $str;
 		}
 

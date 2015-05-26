@@ -30,21 +30,30 @@ trait Grammar {
 	}
 
 	protected function column($str) {
-		if(stripos($str, ' as ') !== false) {
-			list($column, $as, $alias) = explode(' ', $str);
-
-			return sprintf('%s %s %s', $this->column($column), strtoupper($as), $this->column($alias));
+		// handle alias
+		if(strpos($str, ' AS ')) {
+			return $this->alias($str);
 		}
 
-		return implode('.', array_map([$this, 'wrap'], explode('.', $str)));
+		return $this->wrap($str);
+	}
+
+	protected function alias($str) {
+		list($column, $alias) = explode(' AS ', $str);
+
+		return sprintf('%s AS %s', $this->wrap($column), $this->wrap($alias));
 	}
 
 	protected function wrap($str) {
-		if($str == '*' || strpos($str, '(') !== false || strpos($str, ')') !== false) {
+		if(preg_match('#(\*|\(|\)|\+|\-|\s)#', $str)) {
 			return $str;
 		}
 
-		return sprintf($this->wrapper, $str);
+		$fragments = explode('.', $str);
+
+		$formatted = array_map(function($str) { return sprintf($this->wrapper, $str); }, $fragments);
+
+		return implode('.', $formatted);
 	}
 
 	protected function placeholders(array $items) {

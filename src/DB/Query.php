@@ -3,8 +3,7 @@
 namespace DB;
 
 use PDO;
-use PDOException;
-use ErrorException;
+
 use DB\Contracts\Row as RowInterface;
 use DB\Traits\Builder as BuilderTrait;
 use DB\Traits\Profile as ProfileTrait;
@@ -37,8 +36,9 @@ class Query {
 				$this->stop($sql, $values, $sth->rowCount());
 			}
 		}
-		catch(PDOException $e) {
-			throw new ErrorException($e->getMessage() . ' SQL: ' . $sql . ' PARAMS: ' . var_export($values, true));
+		catch(\Exception $e) {
+			$error = new SqlSyntaxException($e->getMessage());
+			throw $error->withSql($sql)->withParams($values);
 		}
 
 		$this->reset();

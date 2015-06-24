@@ -3,6 +3,7 @@
 namespace DB;
 
 use PDO;
+use PDOException;
 
 use DB\Contracts\Row as RowInterface;
 use DB\Traits\Builder as BuilderTrait;
@@ -14,36 +15,40 @@ class Query {
 
 	protected $pdo;
 
+	protected $result;
+
 	protected $prototype;
 
-	protected $supported = ['mysql', 'sqlite'];
-
-	public function __construct(PDO $pdo, RowInterface $prototype = null) {
+	public function __construct(PDO $pdo, RowInterface $prototype = null, Result $result = null) {
 		$this->pdo = $pdo;
 		$this->prototype = null === $prototype ? new Row : $prototype;
+		$this->result = null === $result ? new Result : $result;
 	}
 
 	public function exec($sql, array $values = []) {
-		try {
-			if($this->profiling) {
-				$this->start();
-			}
-
-			$sth = $this->pdo->prepare($sql);
-			$sth->execute($values);
-
-			if($this->profiling) {
-				$this->stop($sql, $values, $sth->rowCount());
-			}
+		if($this->profiling) {
+			$this->start();
 		}
-		catch(\Exception $e) {
-			$error = new SqlSyntaxException($e->getMessage());
+
+		try {
+			$sth = $this->pdo->prepare($sql);
+			$result = $sth->execute($values);
+		}
+		catch(PDOException $e) {
+			$error = new SqlException($e->getMessage());
 			throw $error->withSql($sql)->withParams($values);
 		}
 
+		if($this->profiling) {
+			$this->stop($sql, $values, $sth->rowCount());
+		}
+
+		// reset the builder for next query
 		$this->reset();
 
-		return $sth;
+		$return = clone $this->result;
+
+		return $return->withResult($result)->withStatement($sth);
 	}
 
 	public function prototype(RowInterface $prototype) {
@@ -63,7 +68,8 @@ class Query {
 	}
 
 	public function get() {
-		$sth = $this->exec($this->getSqlString(), $this->getBindings());
+		$res = $this->exec($this->getSqlString(), $this->getBindings());
+		$sth = $res->getStatement();
 		$results = [];
 
 		while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
@@ -76,23 +82,31 @@ class Query {
 	}
 
 	public function fetch() {
-		$results = $this->get();
+		$res = $this->exec($this->getSqlString(), $this->getBindings());
 
-		return isset($results[0]) ? $results[0] : false;
+		$row = $res->getStatement()->fetch(PDO::FETCH_ASSOC);
+
+		return $this->hydrate($row);
 	}
 
 	public function col($column = 0) {
-		return $this->exec($this->getSqlString(), $this->values)->fetchColumn();
+		$res = $this->exec($this->getSqlString(), $this->getBindings());
+
+		return $res->getStatement()->fetchColumn();
 	}
 
 	public function count($column = '*') {
 		$func = sprintf('COUNT(%s)', $this->column($column));
-		return $this->select([$func])->exec($this->getSqlString(), $this->values)->fetchColumn();
+		$res = $this->select([$func])->exec($this->getSqlString(), $this->values);
+
+		return $res->getStatement()->fetchColumn();
 	}
 
 	public function sum($column) {
 		$func = sprintf('SUM(%s)', $this->column($column));
-		return $this->select([$func])->exec($this->getSqlString(), $this->values)->fetchColumn();
+		$res = $this->select([$func])->exec($this->getSqlString(), $this->values);
+
+		return $res->getStatement()->fetchColumn();
 	}
 
 	public function update(array $fields) {
@@ -113,7 +127,9 @@ class Query {
 			$sql .= ' WHERE '.$this->where;
 		}
 
-		return $this->exec($sql, $this->values)->rowCount();
+		$res = $this->exec($sql, $this->values);
+
+		return $res->getResult() ? $res->getStatement()->rowCount() : false;
 	}
 
 	public function insert(array $data) {
@@ -121,9 +137,9 @@ class Query {
 		$values = array_values($data);
 
 		$sql = sprintf('INSERT INTO %s (%s) VALUES(%s)', $this->table, $columns, $this->placeholders($data));
-		$this->exec($sql, $values);
+		$res = $this->exec($sql, $values);
 
-		return $this->pdo->lastInsertId();
+		return $res->getResult() ? $this->pdo->lastInsertId() : false;
 	}
 
 	public function delete() {
@@ -133,7 +149,9 @@ class Query {
 			$sql .= ' WHERE '.$this->where;
 		}
 
-		return $this->exec($sql, $this->values)->rowCount();
+		$res = $this->exec($sql, $this->values);
+
+		return $res->getResult() ? $res->getStatement()->rowCount() : false;
 	}
 
 	public function incr($column) {
@@ -151,7 +169,9 @@ class Query {
 			$sql .= ' WHERE '.$this->where;
 		}
 
-		return $this->exec($sql, $this->values)->rowCount();
+		$res = $this->exec($sql, $this->values);
+
+		return $res->getResult() ? $res->getStatement()->rowCount() : false;
 	}
 
 }

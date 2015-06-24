@@ -6,13 +6,15 @@ trait Grammar {
 
 	protected $wrapper = '"%s"';
 
+	protected $supported = ['mysql', 'sqlite'];
+
 	public function driver($driver) {
 		if(false === in_array($driver, $this->supported)) {
 			throw new \ErrorException(sprintf('Unsupported database driver: %s', $driver));
 		}
 
 		$func = sprintf('get%sWrapFormat', ucfirst($driver));
-		$this->wrapper = call_user_func([$this, $func]);
+		$this->wrapper = $this->$func();
 
 		return $this;
 	}

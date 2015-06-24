@@ -2,7 +2,7 @@
 
 namespace DB;
 
-class SqlSyntaxException extends \ErrorException {
+class SqlException extends \ErrorException {
 
 	protected $sql;
 

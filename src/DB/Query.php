@@ -86,7 +86,7 @@ class Query {
 
 		$row = $res->getStatement()->fetch(PDO::FETCH_ASSOC);
 
-		return $this->hydrate($row);
+		return is_array($row) ? $this->hydrate($row) : false;
 	}
 
 	public function col($column = 0) {

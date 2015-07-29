@@ -43,6 +43,22 @@ trait Wheres {
 		return $this->where($key, $op, $value, 'OR');
 	}
 
+	public function whereRaw($sql, $join = 'AND') {
+		if($this->append_where_join) {
+			$this->where .= $join;
+		}
+
+		$this->where .= $sql;
+
+		$this->append_where_join = true;
+
+		return $this;
+	}
+
+	public function orWhereRaw($sql) {
+		return $this->whereRaw($sql, 'OR');
+	}
+
 	public function whereIsNull($key, $join = 'AND') {
 		if($this->append_where_join) {
 			$this->where .= $join;

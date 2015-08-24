@@ -31,7 +31,7 @@ class Query {
 		}
 
 		try {
-			$sth = $this->pdo->prepare($sql);
+			$sth = $this->pdo->prepare($sql, [\PDO::ATTR_CURSOR => \PDO::CURSOR_SCROLL]);
 			$result = $sth->execute($values);
 		}
 		catch(PDOException $e) {
@@ -78,7 +78,7 @@ class Query {
 
 		$sth->closeCursor();
 
-		return $results;
+		return \SplFixedArray::fromArray($results);
 	}
 
 	public function fetch() {

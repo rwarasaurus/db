@@ -2,7 +2,7 @@
 	"name": "rwarasaurus/db",
 	"description": "DBAL",
 	"license": "GPL-3.0",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"type": "library",
 	"authors": [
 		{
@@ -16,8 +16,7 @@
 		"php": ">=5.5"
 	},
 	"require-dev": {
-		"phpspec/phpspec": "~2.0",
-		"phpunit/phpunit": "4.8.*@dev"
+		"phpspec/phpspec": "~2.0"
 	},
 	"autoload": {
 		"psr-4": {
@@ -26,6 +25,5 @@
 	},
 	"config": {
 		"bin-dir": "bin/"
-	},
-	"minimum-stability": "dev"
+	}
 }

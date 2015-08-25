@@ -66,7 +66,7 @@ trait Builder {
 		$this->values = [];
 		$this->limit = null;
 		$this->offset = null;
-		$this->append_where_join = false;
+		$this->append_condition = false;
 
 		return $this;
 	}

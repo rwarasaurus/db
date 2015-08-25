@@ -16,4 +16,10 @@ trait Joins {
 		return $this->join($table, $left, $op, $right, 'LEFT');
 	}
 
+	public function joinRaw($sql) {
+		$this->join .= sprintf(' %s ', $sql);
+
+		return $this;
+	}
+
 }

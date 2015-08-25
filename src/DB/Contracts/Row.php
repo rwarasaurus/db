@@ -12,6 +12,4 @@ interface Row {
 
 	public function toArray();
 
-	public function toJson();
-
 }

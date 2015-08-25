@@ -4,7 +4,7 @@ namespace DB;
 
 use DB\Contracts\Row as RowInterface;
 
-class Row implements RowInterface {
+class Row implements RowInterface, \Serializable, \JsonSerializable {
 
 	/**
 	 * Row attributes
@@ -43,12 +43,30 @@ class Row implements RowInterface {
 	}
 
 	/**
+	 * Serialize attributes
+	 *
+	 * @return string
+	 */
+	public function serialize() {
+		return serialize($this->attributes);
+	}
+
+	/**
+	 * Unserialize attributes
+	 *
+	 * @param string
+	 */
+	public function unserialize($data) {
+		$this->attributes = unserialize($data);
+	}
+
+	/**
 	 * Convert to string (json)
 	 *
 	 * @return string
 	 */
 	public function __toString() {
-		return $this->toJson();
+		return $this->jsonSerialize();
 	}
 
 	/**
@@ -56,8 +74,8 @@ class Row implements RowInterface {
 	 *
 	 * @return string
 	 */
-	public function toJson() {
-		return json_encode($this->toArray());
+	public function jsonSerialize() {
+		return json_encode($this->attributes);
 	}
 
 	/**

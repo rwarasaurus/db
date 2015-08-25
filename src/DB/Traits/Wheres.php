@@ -48,7 +48,7 @@ trait Wheres {
 			$this->where .= $join;
 		}
 
-		$this->where .= $sql;
+		$this->where .= sprintf(' %s ', $sql);
 
 		$this->append_where_join = true;
 

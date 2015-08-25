@@ -11,12 +11,14 @@ trait Profile {
 	protected $start;
 
 	protected function start() {
-		$this->start = microtime(true);
+		if($this->profiling) $this->start = microtime(true);
 	}
 
 	protected function stop($sql, $values, $rows) {
-		$time = microtime(true) - $this->start;
-		$this->profile[] = compact('sql', 'values', 'rows', 'time');
+		if($this->profiling) {
+			$time = microtime(true) - $this->start;
+			$this->profile[] = compact('sql', 'values', 'rows', 'time');
+		}
 	}
 
 	public function getProfile() {

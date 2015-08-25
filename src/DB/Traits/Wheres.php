@@ -4,24 +4,32 @@ namespace DB\Traits;
 
 trait Wheres {
 
-	protected $append_where_join = false;
+	/**
+	 * Conditions should only be appended inbetween statements
+	 *
+	 * @var bool
+	 */
+	protected $append_condition = false;
 
-	protected $where = '';
+	/**
+	 * The where array
+	 *
+	 * @var string
+	 */
+	protected $where = [];
 
 	protected function nest() {
-		$this->append_where_join = false;
-		$this->where .= ' ( ';
+		$this->append_condition = false;
+		$this->where[] = '(';
 	}
 
 	protected function unnest() {
-		$this->append_where_join = true;
-		$this->where .= ' ) ';
+		$this->append_condition = true;
+		$this->where[] = ')';
 	}
 
-	public function where($key, $op = null, $value = null, $join = 'AND') {
-		if($this->append_where_join) {
-			$this->where .= $join;
-		}
+	public function where($key, $op = null, $value = null, $condition = 'AND') {
+		if($this->append_condition) $this->where[] = $condition;
 
 		if($key instanceof \Closure) {
 			$this->nest();
@@ -31,10 +39,10 @@ trait Wheres {
 			return $this;
 		}
 
-		$this->where .= sprintf(' %s %s ? ', $this->column($key), $op);
+		$this->where[] = sprintf('%s %s ?', $this->grammar->column($key), $op);
 		$this->values[] = $value;
 
-		$this->append_where_join = true;
+		$this->append_condition = true;
 
 		return $this;
 	}
@@ -43,14 +51,12 @@ trait Wheres {
 		return $this->where($key, $op, $value, 'OR');
 	}
 
-	public function whereRaw($sql, $join = 'AND') {
-		if($this->append_where_join) {
-			$this->where .= $join;
-		}
+	public function whereRaw($sql, $condition = 'AND') {
+		if($this->append_condition) $this->where[] = $condition;
 
-		$this->where .= sprintf(' %s ', $sql);
+		$this->where[] = $sql;
 
-		$this->append_where_join = true;
+		$this->append_condition = true;
 
 		return $this;
 	}
@@ -59,14 +65,12 @@ trait Wheres {
 		return $this->whereRaw($sql, 'OR');
 	}
 
-	public function whereIsNull($key, $join = 'AND') {
-		if($this->append_where_join) {
-			$this->where .= $join;
-		}
+	public function whereIsNull($key, $condition = 'AND') {
+		if($this->append_condition) $this->where[] = $condition;
 
-		$this->where .= sprintf(' %s IS NULL ', $this->column($key));
+		$this->where[] = sprintf('%s IS NULL', $this->grammar->column($key));
 
-		$this->append_where_join = true;
+		$this->append_condition = true;
 
 		return $this;
 	}
@@ -75,14 +79,12 @@ trait Wheres {
 		return $this->whereIsNull($key, 'OR');
 	}
 
-	public function whereIsNotNull($key, $join = 'AND') {
-		if($this->append_where_join) {
-			$this->where .= $join;
-		}
+	public function whereIsNotNull($key, $condition = 'AND') {
+		if($this->append_condition) $this->where[] = $condition;
 
-		$this->where .= sprintf(' %s IS NOT NULL ', $this->column($key));
+		$this->where[] = sprintf('%s IS NOT NULL', $this->grammar->column($key));
 
-		$this->append_where_join = true;
+		$this->append_condition = true;
 
 		return $this;
 	}
@@ -91,15 +93,13 @@ trait Wheres {
 		return $this->whereIsNotNull($key, 'OR');
 	}
 
-	public function whereIn($key, array $values, $join = 'AND') {
-		if($this->append_where_join) {
-			$this->where .= $join;
-		}
+	public function whereIn($key, array $values, $condition = 'AND') {
+		if($this->append_condition) $this->where[] = $condition;
 
-		$this->where .= sprintf(' %s IN(%s) ', $this->column($key), $this->placeholders($values));
+		$this->where[] = sprintf('%s IN(%s)', $this->grammar->column($key), $this->grammar->placeholders($values));
 		$this->values = array_merge($this->values, $values);
 
-		$this->append_where_join = true;
+		$this->append_condition = true;
 
 		return $this;
 	}
@@ -108,15 +108,13 @@ trait Wheres {
 		return $this->whereIn($key, $values, 'OR');
 	}
 
-	public function whereNotIn($key, array $values, $join = 'AND') {
-		if($this->append_where_join) {
-			$this->where .= $join;
-		}
+	public function whereNotIn($key, array $values, $condition = 'AND') {
+		if($this->append_condition) $this->where[] = $condition;
 
-		$this->where .= sprintf(' %s NOT IN(%s) ', $this->column($key), $this->placeholders($values));
+		$this->where[] = sprintf('%s NOT IN(%s)', $this->grammar->column($key), $this->grammar->placeholders($values));
 		$this->values = array_merge($this->values, $values);
 
-		$this->append_where_join = true;
+		$this->append_condition = true;
 
 		return $this;
 	}

@@ -2,8 +2,6 @@
 
 namespace DB;
 
-use DB\Contracts\Row as RowInterface;
-
 class Row implements RowInterface, \Serializable, \JsonSerializable {
 
 	/**

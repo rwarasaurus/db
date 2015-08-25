@@ -1,6 +1,14 @@
 <?php
 
+namespace DB;
+
+use PDO;
+use PDOStatement;
+use DB\Traits\PrototypeHydrator as PrototypeHydrator;
+
 class RowIterator implements \Iterator {
+
+	use PrototypeHydrator;
 
 	protected $statement;
 
@@ -10,8 +18,9 @@ class RowIterator implements \Iterator {
 
 	protected $valid;
 
-	public function __construct(\PDOStatement $statement) {
+	public function __construct(PDOStatement $statement, RowInterface $prototype = null) {
 		$this->statement = $statement;
+		$this->prototype = null === $prototype ? new Row : $prototype;
 	}
 
 	/**
@@ -26,13 +35,16 @@ class RowIterator implements \Iterator {
 	 */
 	public function next() {
 		$this->key++;
-		$this->result = $this->statement->fetch(\PDO::FETCH_ASSOC, \PDO::FETCH_ORI_ABS, $this->key);
 
-		if(false === $this->result) {
+		$row = $this->statement->fetch(PDO::FETCH_ASSOC, PDO::FETCH_ORI_ABS, $this->key);
+
+		if(false === $row) {
 			$this->valid = false;
 
 			return null;
 		}
+
+		$this->result = $this->hydrate($row);
 	}
 
 	/**

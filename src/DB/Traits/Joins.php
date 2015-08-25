@@ -4,10 +4,16 @@ namespace DB\Traits;
 
 trait Joins {
 
-	protected $join = '';
+	protected $join = [];
 
 	public function join($table, $left, $op, $right, $type = 'INNER') {
-		$this->join .= sprintf(' %s JOIN %s ON(%s %s %s) ', $type, $this->wrap($table), $this->column($left), $op, $this->column($right));
+		$this->join[] = sprintf('%s JOIN %s ON(%s %s %s)',
+			$type,
+			$this->grammar->wrap($table),
+			$this->grammar->column($left),
+			$op,
+			$this->grammar->column($right)
+		);
 
 		return $this;
 	}
@@ -17,7 +23,7 @@ trait Joins {
 	}
 
 	public function joinRaw($sql) {
-		$this->join .= sprintf(' %s ', $sql);
+		$this->join[] = $sql;
 
 		return $this;
 	}

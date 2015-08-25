@@ -2,7 +2,7 @@
 	"name": "rwarasaurus/db",
 	"description": "DBAL",
 	"license": "GPL-3.0",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"type": "library",
 	"authors": [
 		{
@@ -23,6 +23,9 @@
 		"psr-4": {
 			"": "src"
 		}
+	},
+	"config": {
+		"bin-dir": "bin/"
 	},
 	"minimum-stability": "dev"
 }

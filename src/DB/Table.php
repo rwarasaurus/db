@@ -2,8 +2,6 @@
 
 namespace DB;
 
-use DB\Contracts\Row as RowInterface;
-
 class Table {
 
 	/**
@@ -82,4 +80,5 @@ class Table {
 
 		return true;
 	}
+
 }

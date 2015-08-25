@@ -4,7 +4,7 @@ namespace DB\Traits;
 
 trait Builder {
 
-	use Grammar, Wheres, Joins;
+	use Wheres, Joins;
 
 	protected $table;
 
@@ -21,25 +21,25 @@ trait Builder {
 	protected $offset;
 
 	public function select(array $columns) {
-		$this->select = $this->columns($columns);
+		$this->select = $this->grammar->columns($columns);
 
 		return $this;
 	}
 
 	public function table($table) {
-		$this->table = $this->wrap($table);
+		$this->table = $this->grammar->wrap($table);
 
 		return $this;
 	}
 
 	public function group($column) {
-		$this->groups[] = $this->column($column);
+		$this->groups[] = $this->grammar->column($column);
 
 		return $this;
 	}
 
 	public function sort($column, $mode = 'ASC') {
-		$this->sorts[] = sprintf('%s %s', $this->column($column), strtoupper($mode));
+		$this->sorts[] = sprintf('%s %s', $this->grammar->column($column), strtoupper($mode));
 
 		return $this;
 	}
@@ -59,8 +59,8 @@ trait Builder {
 	public function reset() {
 		$this->select = '*';
 		$this->table = null;
-		$this->where = '';
-		$this->join = '';
+		$this->where = [];
+		$this->join = [];
 		$this->groups = [];
 		$this->sorts = [];
 		$this->values = [];
@@ -78,12 +78,12 @@ trait Builder {
 			$sql .= ' FROM '.$this->table;
 		}
 
-		if($this->join) {
-			$sql .= $this->join;
+		if(count($this->join)) {
+			$sql .= ' '.implode(' ', $this->join);
 		}
 
-		if($this->where) {
-			$sql .= ' WHERE '.$this->where;
+		if(count($this->where)) {
+			$sql .= ' WHERE '.implode(' ', $this->where);
 		}
 
 		if(count($this->groups)) {

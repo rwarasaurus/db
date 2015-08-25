@@ -5,33 +5,45 @@ namespace DB;
 use PDO;
 use PDOException;
 
-use DB\Contracts\Row as RowInterface;
 use DB\Traits\Builder as BuilderTrait;
 use DB\Traits\Profile as ProfileTrait;
+use DB\Traits\PrototypeHydrator as PrototypeHydratorTrait;
 
 class Query {
 
-	use BuilderTrait, ProfileTrait;
+	use BuilderTrait, ProfileTrait, PrototypeHydratorTrait;
 
 	protected $pdo;
 
 	protected $result;
 
-	protected $prototype;
+	protected $grammar;
 
-	public function __construct(PDO $pdo, RowInterface $prototype = null, Result $result = null) {
+	public function __construct(PDO $pdo, RowInterface $prototype = null, ResultInterface $result = null, GrammarInterface $grammar = null) {
 		$this->pdo = $pdo;
 		$this->prototype = null === $prototype ? new Row : $prototype;
 		$this->result = null === $result ? new Result : $result;
+		$this->grammar = null === $grammar ? new Grammar($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME)) : $grammar;
 	}
 
-	public function exec($sql, array $values = []) {
-		if($this->profiling) {
-			$this->start();
-		}
+	public function exec($sql, array $values = [], array $options = []) {
+		$this->start();
 
 		try {
-			$sth = $this->pdo->prepare($sql, [\PDO::ATTR_CURSOR => \PDO::CURSOR_SCROLL]);
+			$sth = $this->pdo->prepare($sql, $options);
+
+			if(false === $sth) {
+				// was it a unsupported driver option?
+				if($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) == 'sqlite' &&
+					array_key_exists(PDO::ATTR_CURSOR, $options) &&
+					$options[PDO::ATTR_CURSOR] === PDO::CURSOR_SCROLL) {
+
+					throw new \InvalidArgumentException('sqlite does not support the PDO::CURSOR_SCROLL attribute.');
+				}
+
+				throw new \RuntimeException('failed to prepare statement.');
+			}
+
 			$result = $sth->execute($values);
 		}
 		catch(PDOException $e) {
@@ -39,9 +51,7 @@ class Query {
 			throw $error->withSql($sql)->withParams($values);
 		}
 
-		if($this->profiling) {
-			$this->stop($sql, $values, $sth->rowCount());
-		}
+		$this->stop($sql, $values, $sth->rowCount());
 
 		// reset the builder for next query
 		$this->reset();
@@ -51,34 +61,28 @@ class Query {
 		return $return->withResult($result)->withStatement($sth);
 	}
 
-	public function prototype(RowInterface $prototype) {
-		$this->prototype = $prototype;
-
-		return $this;
-	}
-
-	public function hydrate(array $row) {
-		$obj = clone $this->prototype;
-
-		foreach($row as $key => $value) {
-			$obj->$key = $value;
-		}
-
-		return $obj;
-	}
-
-	public function get() {
-		$res = $this->exec($this->getSqlString(), $this->getBindings());
+	public function get($buffered = true) {
+		$options = $buffered ? [] : [PDO::ATTR_CURSOR => PDO::CURSOR_SCROLL];
+		$res = $this->exec($this->getSqlString(), $this->getBindings(), $options);
 		$sth = $res->getStatement();
-		$results = [];
 
-		while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
-			$results[] = $this->hydrate($row);
+		if($buffered) {
+			$results = [];
+
+			while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
+				$results[] = $this->hydrate($row);
+			}
+
+			$sth->closeCursor();
+
+			return $results;
 		}
 
-		$sth->closeCursor();
+		$iterator = new RowIterator($sth);
 
-		return \SplFixedArray::fromArray($results);
+		$iterator->prototype($this->prototype);
+
+		return $iterator;
 	}
 
 	public function fetch() {
@@ -89,21 +93,21 @@ class Query {
 		return is_array($row) ? $this->hydrate($row) : false;
 	}
 
-	public function col($column = 0) {
+	public function column($column = 0) {
 		$res = $this->exec($this->getSqlString(), $this->getBindings());
 
 		return $res->getStatement()->fetchColumn();
 	}
 
 	public function count($column = '*') {
-		$func = sprintf('COUNT(%s)', $this->column($column));
+		$func = sprintf('COUNT(%s)', $this->grammar->column($column));
 		$res = $this->select([$func])->exec($this->getSqlString(), $this->values);
 
 		return $res->getStatement()->fetchColumn();
 	}
 
 	public function sum($column) {
-		$func = sprintf('SUM(%s)', $this->column($column));
+		$func = sprintf('SUM(%s)', $this->grammar->column($column));
 		$res = $this->select([$func])->exec($this->getSqlString(), $this->values);
 
 		return $res->getStatement()->fetchColumn();
@@ -114,7 +118,7 @@ class Query {
 		$values = [];
 
 		foreach($fields as $key => $value) {
-			$sets[] =  $this->column($key) . ' = ?';
+			$sets[] =  $this->grammar->column($key) . ' = ?';
 			$values[] = $value;
 		}
 
@@ -123,8 +127,8 @@ class Query {
 
 		$sql = sprintf('UPDATE %s SET %s', $this->table, implode(', ', $sets));
 
-		if($this->where) {
-			$sql .= ' WHERE '.$this->where;
+		if(count($this->where)) {
+			$sql .= ' WHERE '.implode(' ', $this->where);
 		}
 
 		$res = $this->exec($sql, $this->values);
@@ -133,10 +137,10 @@ class Query {
 	}
 
 	public function insert(array $data) {
-		$columns = $this->columns(array_keys($data));
+		$columns = $this->grammar->columns(array_keys($data));
 		$values = array_values($data);
 
-		$sql = sprintf('INSERT INTO %s (%s) VALUES(%s)', $this->table, $columns, $this->placeholders($data));
+		$sql = sprintf('INSERT INTO %s (%s) VALUES(%s)', $this->table, $columns, $this->grammar->placeholders($data));
 		$res = $this->exec($sql, $values);
 
 		return $res->getResult() ? $this->pdo->lastInsertId() : false;
@@ -145,8 +149,8 @@ class Query {
 	public function delete() {
 		$sql = sprintf('DELETE FROM %s', $this->table);
 
-		if($this->where) {
-			$sql .= ' WHERE '.$this->where;
+		if(count($this->where)) {
+			$sql .= ' WHERE '.implode(' ', $this->where);
 		}
 
 		$res = $this->exec($sql, $this->values);
@@ -163,10 +167,10 @@ class Query {
 	}
 
 	protected function modify($column, $amount) {
-		$sql = sprintf('UPDATE %1$s SET %2$s = %2$s + %3$s', $this->table, $this->column($column), $amount);
+		$sql = sprintf('UPDATE %1$s SET %2$s = %2$s + %3$s', $this->table, $this->grammar->column($column), $amount);
 
-		if($this->where) {
-			$sql .= ' WHERE '.$this->where;
+		if(count($this->where)) {
+			$sql .= ' WHERE '.implode(' ', $this->where);
 		}
 
 		$res = $this->exec($sql, $this->values);

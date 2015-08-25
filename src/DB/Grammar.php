@@ -1,37 +1,29 @@
 <?php
 
-namespace DB\Traits;
+namespace DB;
 
-trait Grammar {
+class Grammar {
 
 	protected $wrapper = '"%s"';
 
-	protected $supported = ['mysql', 'sqlite'];
+	protected $supported = [
+		'mysql' => '`%s`',
+		'sqlite' => '"%s"',
+	];
 
-	public function driver($driver) {
-		if(false === in_array($driver, $this->supported)) {
+	public function __construct($driver) {
+		if(false === array_key_exists($driver, $this->supported)) {
 			throw new \ErrorException(sprintf('Unsupported database driver: %s', $driver));
 		}
 
-		$func = sprintf('get%sWrapFormat', ucfirst($driver));
-		$this->wrapper = $this->$func();
-
-		return $this;
+		$this->wrapper = $this->supported[$driver];
 	}
 
-	protected function getMysqlWrapFormat() {
-		return '`%s`';
-	}
-
-	protected function getSqliteWrapFormat() {
-		return '"%s"';
-	}
-
-	protected function columns(array $columns) {
+	public function columns(array $columns) {
 		return implode(', ', array_map([$this, 'column'], $columns));
 	}
 
-	protected function column($str) {
+	public function column($str) {
 		// handle alias
 		if(strpos($str, ' AS ')) {
 			return $this->alias($str);
@@ -40,13 +32,13 @@ trait Grammar {
 		return $this->wrap($str);
 	}
 
-	protected function alias($str) {
+	public function alias($str) {
 		list($column, $alias) = explode(' AS ', $str);
 
 		return sprintf('%s AS %s', $this->wrap($column), $this->wrap($alias));
 	}
 
-	protected function wrap($str) {
+	public function wrap($str) {
 		if(preg_match('#(\*|\(|\)|\+|\-|\s)#', $str)) {
 			return $str;
 		}
@@ -58,7 +50,7 @@ trait Grammar {
 		return implode('.', $formatted);
 	}
 
-	protected function placeholders(array $items) {
+	public function placeholders(array $items) {
 		return implode(', ', array_fill(0, count($items), '?'));
 	}
 

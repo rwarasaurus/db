@@ -1,8 +1,8 @@
 <?php
 
-namespace DB\Contracts;
+namespace DB;
 
-interface Row {
+interface RowInterface {
 
 	public function __get($column);
 

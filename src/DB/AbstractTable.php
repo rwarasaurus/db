@@ -2,7 +2,7 @@
 
 namespace DB;
 
-class Table {
+abstract class AbstractTable implements TableInterface {
 
 	/**
 	 * Table Name
@@ -40,15 +40,9 @@ class Table {
 	 * @param string
 	 * @param string
 	 */
-	public function __construct(Query $query, RowInterface $prototype, $name = null, $primary = null) {
+	public function __construct(Query $query, RowInterface $prototype) {
 		$this->query = $query;
 		$this->prototype = $prototype;
-
-		// set table name
-		$this->name = $name ?: $this->name;
-
-		// set primary key column name
-		$this->primary = $primary ?: $this->primary;
 	}
 
 	/**

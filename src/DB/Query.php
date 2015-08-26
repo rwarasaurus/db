@@ -5,45 +5,76 @@ namespace DB;
 use PDO;
 use PDOException;
 
-use DB\Traits\Builder as BuilderTrait;
-use DB\Traits\Profile as ProfileTrait;
-use DB\Traits\PrototypeHydrator as PrototypeHydratorTrait;
-
 class Query {
 
-	use BuilderTrait, ProfileTrait, PrototypeHydratorTrait;
-
 	protected $pdo;
+
+	protected $prototype;
 
 	protected $result;
 
 	protected $grammar;
 
+	protected $profile = [];
+
+	protected $profiling = true;
+
+	protected $start;
+
+	protected $table;
+
+	protected $select = '*';
+
+	protected $values = [];
+
+	protected $groups = [];
+
+	protected $sorts = [];
+
+	protected $limit;
+
+	protected $offset;
+
+	protected $append_condition = false;
+
+	protected $where = [];
+
+	protected $join = [];
+
 	public function __construct(PDO $pdo, RowInterface $prototype = null, ResultInterface $result = null, GrammarInterface $grammar = null) {
 		$this->pdo = $pdo;
 		$this->prototype = null === $prototype ? new Row : $prototype;
 		$this->result = null === $result ? new Result : $result;
-		$this->grammar = null === $grammar ? new Grammar($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME)) : $grammar;
+
+		if(null === $grammar) {
+			$driver = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+			$grammar = new Grammar($driver);
+		}
+
+		$this->grammar = $grammar;
+	}
+
+	public function prototype(RowInterface $prototype) {
+		$this->prototype = $prototype;
+
+		return $this;
+	}
+
+	public function hydrate(array $row) {
+		$obj = clone $this->prototype;
+
+		foreach($row as $key => $value) {
+			$obj->$key = $value;
+		}
+
+		return $obj;
 	}
 
 	public function exec($sql, array $values = [], array $options = []) {
-		$this->start();
+		if($this->profiling) $this->start();
 
 		try {
 			$sth = $this->pdo->prepare($sql, $options);
-
-			if(false === $sth) {
-				// was it a unsupported driver option?
-				if($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) == 'sqlite' &&
-					array_key_exists(PDO::ATTR_CURSOR, $options) &&
-					$options[PDO::ATTR_CURSOR] === PDO::CURSOR_SCROLL) {
-
-					throw new \InvalidArgumentException('sqlite does not support the PDO::CURSOR_SCROLL attribute.');
-				}
-
-				throw new \RuntimeException('failed to prepare statement.');
-			}
-
 			$result = $sth->execute($values);
 		}
 		catch(PDOException $e) {
@@ -51,9 +82,8 @@ class Query {
 			throw $error->withSql($sql)->withParams($values);
 		}
 
-		$this->stop($sql, $values, $sth->rowCount());
+		if($this->profiling) $this->stop($sql, $values, $sth->rowCount());
 
-		// reset the builder for next query
 		$this->reset();
 
 		$return = clone $this->result;
@@ -61,56 +91,247 @@ class Query {
 		return $return->withResult($result)->withStatement($sth);
 	}
 
-	public function get($buffered = true) {
-		$options = $buffered ? [] : [PDO::ATTR_CURSOR => PDO::CURSOR_SCROLL];
-		$res = $this->exec($this->getSqlString(), $this->getBindings(), $options);
-		$sth = $res->getStatement();
+	protected function start() {
+		$this->start = microtime(true);
+	}
 
-		if($buffered) {
-			$results = [];
+	protected function stop($sql, $values, $rows) {
+		$time = microtime(true) - $this->start;
+		$this->profile[] = compact('sql', 'values', 'rows', 'time');
+	}
 
-			while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
-				$results[] = $this->hydrate($row);
-			}
+	public function getProfile() {
+		return $this->profile;
+	}
 
-			$sth->closeCursor();
+	public function disableProfile() {
+		$this->profiling = false;
 
-			return $results;
+		return $this;
+	}
+
+	public function getLastProfile() {
+		return end($this->profile);
+	}
+
+	public function getLastSqlString() {
+		return $this->getLastProfile()['sql'];
+	}
+
+	public function select(array $columns) {
+		$this->select = $this->grammar->columns($columns);
+
+		return $this;
+	}
+
+	public function table($table) {
+		$this->table = $this->grammar->wrap($table);
+
+		return $this;
+	}
+
+	public function group($column) {
+		$this->groups[] = $this->grammar->column($column);
+
+		return $this;
+	}
+
+	public function sort($column, $mode = 'ASC') {
+		$this->sorts[] = sprintf('%s %s', $this->grammar->column($column), strtoupper($mode));
+
+		return $this;
+	}
+
+	public function take($perpage) {
+		$this->limit = (int) $perpage;
+
+		return $this;
+	}
+
+	public function skip($offset) {
+		$this->offset = (int) $offset;
+
+		return $this;
+	}
+
+	public function reset() {
+		$this->select = '*';
+		$this->table = null;
+		$this->where = [];
+		$this->join = [];
+		$this->groups = [];
+		$this->sorts = [];
+		$this->values = [];
+		$this->limit = null;
+		$this->offset = null;
+		$this->append_condition = false;
+
+		return $this;
+	}
+
+	public function getSqlString() {
+		$sql = 'SELECT '.$this->select;
+
+		if($this->table) {
+			$sql .= ' FROM '.$this->table;
 		}
 
-		$iterator = new RowIterator($sth);
+		if(count($this->join)) {
+			$sql .= ' '.implode(' ', $this->join);
+		}
 
-		$iterator->prototype($this->prototype);
+		if(count($this->where)) {
+			$sql .= ' WHERE '.implode(' ', $this->where);
+		}
 
-		return $iterator;
+		if(count($this->groups)) {
+			$sql .= ' GROUP BY '.implode(', ', $this->groups);
+		}
+
+		if(count($this->sorts)) {
+			$sql .= ' ORDER BY '.implode(', ', $this->sorts);
+		}
+
+		if($this->limit) {
+			$sql .= ' LIMIT '.$this->limit;
+
+			if($this->offset) {
+				$sql .= ' OFFSET '.$this->offset;
+			}
+		}
+
+		return $sql;
 	}
 
-	public function fetch() {
-		$res = $this->exec($this->getSqlString(), $this->getBindings());
-
-		$row = $res->getStatement()->fetch(PDO::FETCH_ASSOC);
-
-		return is_array($row) ? $this->hydrate($row) : false;
+	public function getBindings() {
+		return $this->values;
 	}
 
-	public function column($column = 0) {
-		$res = $this->exec($this->getSqlString(), $this->getBindings());
-
-		return $res->getStatement()->fetchColumn();
+	protected function nest() {
+		$this->append_condition = false;
+		$this->where[] = '(';
 	}
 
-	public function count($column = '*') {
-		$func = sprintf('COUNT(%s)', $this->grammar->column($column));
-		$res = $this->select([$func])->exec($this->getSqlString(), $this->values);
-
-		return $res->getStatement()->fetchColumn();
+	protected function unnest() {
+		$this->append_condition = true;
+		$this->where[] = ')';
 	}
 
-	public function sum($column) {
-		$func = sprintf('SUM(%s)', $this->grammar->column($column));
-		$res = $this->select([$func])->exec($this->getSqlString(), $this->values);
+	public function where($key, $op = null, $value = null, $condition = 'AND') {
+		if($this->append_condition) $this->where[] = $condition;
 
-		return $res->getStatement()->fetchColumn();
+		if($key instanceof \Closure) {
+			$this->nest();
+			$key($this);
+			$this->unnest();
+
+			return $this;
+		}
+
+		$this->where[] = sprintf('%s %s ?', $this->grammar->column($key), $op);
+		$this->values[] = $value;
+
+		$this->append_condition = true;
+
+		return $this;
+	}
+
+	public function orWhere($key, $op = null, $value = null) {
+		return $this->where($key, $op, $value, 'OR');
+	}
+
+	public function whereRaw($sql, $condition = 'AND') {
+		if($this->append_condition) $this->where[] = $condition;
+
+		$this->where[] = $sql;
+
+		$this->append_condition = true;
+
+		return $this;
+	}
+
+	public function orWhereRaw($sql) {
+		return $this->whereRaw($sql, 'OR');
+	}
+
+	public function whereIsNull($key, $condition = 'AND') {
+		if($this->append_condition) $this->where[] = $condition;
+
+		$this->where[] = sprintf('%s IS NULL', $this->grammar->column($key));
+
+		$this->append_condition = true;
+
+		return $this;
+	}
+
+	public function orWhereIsNull($key) {
+		return $this->whereIsNull($key, 'OR');
+	}
+
+	public function whereIsNotNull($key, $condition = 'AND') {
+		if($this->append_condition) $this->where[] = $condition;
+
+		$this->where[] = sprintf('%s IS NOT NULL', $this->grammar->column($key));
+
+		$this->append_condition = true;
+
+		return $this;
+	}
+
+	public function orWhereIsNotNull($key) {
+		return $this->whereIsNotNull($key, 'OR');
+	}
+
+	public function whereIn($key, array $values, $condition = 'AND') {
+		if($this->append_condition) $this->where[] = $condition;
+
+		$this->where[] = sprintf('%s IN(%s)', $this->grammar->column($key), $this->grammar->placeholders($values));
+		$this->values = array_merge($this->values, $values);
+
+		$this->append_condition = true;
+
+		return $this;
+	}
+
+	public function orWhereIn($key, array $values) {
+		return $this->whereIn($key, $values, 'OR');
+	}
+
+	public function whereNotIn($key, array $values, $condition = 'AND') {
+		if($this->append_condition) $this->where[] = $condition;
+
+		$this->where[] = sprintf('%s NOT IN(%s)', $this->grammar->column($key), $this->grammar->placeholders($values));
+		$this->values = array_merge($this->values, $values);
+
+		$this->append_condition = true;
+
+		return $this;
+	}
+
+	public function orWhereNotIn($key, array $values) {
+		return $this->whereNotIn($key, $values, 'OR');
+	}
+
+	public function join($table, $left, $op, $right, $type = 'INNER') {
+		$this->join[] = sprintf('%s JOIN %s ON(%s %s %s)',
+			$type,
+			$this->grammar->wrap($table),
+			$this->grammar->column($left),
+			$op,
+			$this->grammar->column($right)
+		);
+
+		return $this;
+	}
+
+	public function leftJoin($table, $left, $op, $right) {
+		return $this->join($table, $left, $op, $right, 'LEFT');
+	}
+
+	public function joinRaw($sql) {
+		$this->join[] = $sql;
+
+		return $this;
 	}
 
 	public function update(array $fields) {
@@ -156,6 +377,49 @@ class Query {
 		$res = $this->exec($sql, $this->values);
 
 		return $res->getResult() ? $res->getStatement()->rowCount() : false;
+	}
+
+	public function get() {
+		$res = $this->exec($this->getSqlString(), $this->getBindings());
+		$sth = $res->getStatement();
+
+		$results = [];
+
+		while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
+			$results[] = $this->hydrate($row);
+		}
+
+		$sth->closeCursor();
+
+		return $results;
+	}
+
+	public function fetch() {
+		$res = $this->exec($this->getSqlString(), $this->getBindings());
+
+		$row = $res->getStatement()->fetch(PDO::FETCH_ASSOC);
+
+		return is_array($row) ? $this->hydrate($row) : false;
+	}
+
+	public function column($column = 0) {
+		$res = $this->exec($this->getSqlString(), $this->getBindings());
+
+		return $res->getStatement()->fetchColumn();
+	}
+
+	public function count($column = '*') {
+		$func = sprintf('COUNT(%s)', $this->grammar->column($column));
+		$res = $this->select([$func])->exec($this->getSqlString(), $this->values);
+
+		return $res->getStatement()->fetchColumn();
+	}
+
+	public function sum($column) {
+		$func = sprintf('SUM(%s)', $this->grammar->column($column));
+		$res = $this->select([$func])->exec($this->getSqlString(), $this->values);
+
+		return $res->getStatement()->fetchColumn();
 	}
 
 	public function incr($column) {

@@ -32,20 +32,23 @@ class Grammar {
 		return $this->wrap($str);
 	}
 
-	public function alias($str) {
+	protected function alias($str) {
 		list($column, $alias) = explode(' AS ', $str);
 
 		return sprintf('%s AS %s', $this->wrap($column), $this->wrap($alias));
 	}
 
 	public function wrap($str) {
+		// dont wrap expressions
 		if(preg_match('#(\*|\(|\)|\+|\-|\s)#', $str)) {
 			return $str;
 		}
 
 		$fragments = explode('.', $str);
 
-		$formatted = array_map(function($str) { return sprintf($this->wrapper, $str); }, $fragments);
+		$formatted = array_map(function($str) {
+			return sprintf($this->wrapper, $str);
+		}, $fragments);
 
 		return implode('.', $formatted);
 	}

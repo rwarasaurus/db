@@ -54,7 +54,7 @@ class Query {
 		$this->grammar = $grammar;
 	}
 
-	protected function prototype(RowInterface $prototype) {
+	public function prototype(RowInterface $prototype) {
 		$this->prototype = $prototype;
 
 		return $this;

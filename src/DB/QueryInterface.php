@@ -4,10 +4,6 @@ namespace DB;
 
 interface QueryInterface {
 
-	public function prototype(RowInterface $prototype);
-
-	public function hydrate(array $row);
-
 	public function exec($sql, array $values = [], array $options = []);
 
 	public function getProfile();

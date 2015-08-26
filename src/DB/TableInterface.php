@@ -2,7 +2,7 @@
 
 namespace DB;
 
-class TableInterface {
+interface TableInterface {
 
 	public function save(RowInterface $row);
 

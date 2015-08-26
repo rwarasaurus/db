@@ -54,13 +54,13 @@ class Query {
 		$this->grammar = $grammar;
 	}
 
-	public function prototype(RowInterface $prototype) {
+	protected function prototype(RowInterface $prototype) {
 		$this->prototype = $prototype;
 
 		return $this;
 	}
 
-	public function hydrate(array $row) {
+	protected function hydrate(array $row) {
 		$obj = clone $this->prototype;
 
 		foreach($row as $key => $value) {

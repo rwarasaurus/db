@@ -240,18 +240,19 @@ class Query {
 		return $this->where($key, $op, $value, 'OR');
 	}
 
-	public function whereRaw($sql, $condition = 'AND') {
+	public function whereRaw($sql, array $values = [], $condition = 'AND') {
 		if($this->append_condition) $this->where[] = $condition;
 
 		$this->where[] = $sql;
+		$this->values = array_merge($this->values, $values);
 
 		$this->append_condition = true;
 
 		return $this;
 	}
 
-	public function orWhereRaw($sql) {
-		return $this->whereRaw($sql, 'OR');
+	public function orWhereRaw($sql, array $values = []) {
+		return $this->whereRaw($sql, $values, 'OR');
 	}
 
 	public function whereIsNull($key, $condition = 'AND') {

@@ -169,6 +169,10 @@ class Query {
 		return $this;
 	}
 
+	public function __clone() {
+		$this->reset();
+	}
+
 	public function getSqlString() {
 		$sql = 'SELECT '.$this->select;
 
@@ -283,11 +287,23 @@ class Query {
 		return $this->whereIsNotNull($key, 'OR');
 	}
 
-	public function whereIn($key, array $values, $condition = 'AND') {
+	public function whereIn($key, $values, $condition = 'AND') {
 		if($this->append_condition) $this->where[] = $condition;
 
-		$this->where[] = sprintf('%s IN(%s)', $this->grammar->column($key), $this->grammar->placeholders($values));
-		$this->values = array_merge($this->values, $values);
+		// where in sub select
+		if($values instanceof \Closure) {
+			$query = clone $this;
+
+			$values($query);
+
+			$this->where[] = sprintf('%s IN(%s)', $this->grammar->column($key), $query->getSqlString());
+			$this->values = array_merge($this->values, $query->getBindings());
+		}
+
+		if(is_array($values)) {
+			$this->where[] = sprintf('%s IN(%s)', $this->grammar->column($key), $this->grammar->placeholders($values));
+			$this->values = array_merge($this->values, $values);
+		}
 
 		$this->append_condition = true;
 

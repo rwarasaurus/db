@@ -129,6 +129,18 @@ class QuerySpec extends ObjectBehavior {
 		$this->getLastSqlString()->shouldBeEqualTo('SELECT * FROM "books" WHERE "id" IN(?, ?, ?)');
 	}
 
+	public function it_should_run_where_in_select_statements() {
+		$this->table('books')->whereIn('id', function($query) {
+			$query->select(['id'])->table('authors')->whereIn('id', [1, 2, 3]);
+		});
+
+		$this->getBindings()->shouldBeArray();
+		$this->getBindings()->shouldContain(1);
+		$this->getBindings()->shouldContain(2);
+		$this->getBindings()->shouldContain(3);
+		$this->getSqlString()->shouldBeEqualTo('SELECT * FROM "books" WHERE "id" IN(SELECT "id" FROM "authors" WHERE "id" IN(?, ?, ?))');
+	}
+
 	public function it_should_run_where_is_null_statements() {
 		$this->table('books')->whereIsNull('id')->fetch();
 		$this->getLastSqlString()->shouldBeEqualTo('SELECT * FROM "books" WHERE "id" IS NULL');

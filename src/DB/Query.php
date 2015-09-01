@@ -288,7 +288,7 @@ class Query {
 
 		// where in sub select
 		if($values instanceof \Closure) {
-			$query = clone $this;
+			$query = clone $this->reset();
 
 			$values($query);
 

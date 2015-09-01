@@ -288,9 +288,9 @@ class Query {
 
 		// where in sub select
 		if($values instanceof \Closure) {
-			$query = clone $this->reset();
+			$query = clone $this;
 
-			$values($query);
+			$values($query->reset());
 
 			$this->where[] = sprintf('%s IN(%s)', $this->grammar->column($key), $query->getSqlString());
 			$this->values = array_merge($this->values, $query->getBindings());

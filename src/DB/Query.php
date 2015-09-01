@@ -169,10 +169,6 @@ class Query {
 		return $this;
 	}
 
-	public function __clone() {
-		$this->reset();
-	}
-
 	public function getSqlString() {
 		$sql = 'SELECT '.$this->select;
 

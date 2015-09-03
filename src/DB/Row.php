@@ -26,8 +26,8 @@ class Row implements RowInterface, \Serializable, \JsonSerializable {
 	 * @param string
 	 * @return mixed
 	 */
-	public function __get($column) {
-		return array_key_exists($column, $this->attributes) ? $this->attributes[$column] : null;
+	public function __get($key) {
+		return isset($this->$key) ? $this->attributes[$key] : null;
 	}
 
 	/**
@@ -36,8 +36,28 @@ class Row implements RowInterface, \Serializable, \JsonSerializable {
 	 * @param string
 	 * @param mixed
 	 */
-	public function __set($column, $value) {
-		$this->attributes[$column] = $value;
+	public function __set($key, $value) {
+		$this->attributes[$key] = $value;
+	}
+
+	/**
+	 * Check if attribute exists
+	 *
+	 * @param string
+	 * @return bool
+	 */
+	public function __isset($key) {
+		return array_key_exists($key, $this->attributes);
+	}
+
+	/**
+	 * Disable unset attributes
+	 *
+	 * @param string
+	 * @return bool
+	 */
+	public function __unset($key) {
+		throw new \RuntimeException(sprintf('Cannot unset attributes "%s"', $key));
 	}
 
 	/**

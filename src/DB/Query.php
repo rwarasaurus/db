@@ -467,4 +467,29 @@ class Query {
 		return $res->getResult() ? $res->getStatement()->rowCount() : false;
 	}
 
+	public function union(...$queries) {
+		$join = [];
+		$values = [];
+
+		foreach($queries as $query) {
+			$join[] = sprintf('(%s)', $query->getSqlString());
+			$values = array_merge($values, $query->getBindings());
+		}
+
+		$sql = implode(' UNION ', $join);
+
+		$res = $this->exec($sql, $values);
+		$sth = $res->getStatement();
+
+		$results = [];
+
+		while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
+			$results[] = $this->hydrate($row);
+		}
+
+		$sth->closeCursor();
+
+		return $results;
+	}
+
 }

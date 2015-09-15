@@ -310,11 +310,23 @@ class Query {
 		return $this->whereIn($key, $values, 'OR');
 	}
 
-	public function whereNotIn($key, array $values, $condition = 'AND') {
+	public function whereNotIn($key, $values, $condition = 'AND') {
 		if($this->append_condition) $this->where[] = $condition;
 
-		$this->where[] = sprintf('%s NOT IN(%s)', $this->grammar->column($key), $this->grammar->placeholders($values));
-		$this->values = array_merge($this->values, $values);
+		// where in sub select
+		if($values instanceof \Closure) {
+			$query = clone $this;
+
+			$values($query->reset());
+
+			$this->where[] = sprintf('%s NOT IN(%s)', $this->grammar->column($key), $query->getSqlString());
+			$this->values = array_merge($this->values, $query->getBindings());
+		}
+
+		if(is_array($values)) {
+			$this->where[] = sprintf('%s NOT IN(%s)', $this->grammar->column($key), $this->grammar->placeholders($values));
+			$this->values = array_merge($this->values, $values);
+		}
 
 		$this->append_condition = true;
 

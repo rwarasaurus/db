@@ -39,6 +39,10 @@ class Grammar {
 	}
 
 	public function wrap($str) {
+		if( ! is_string($str)) {
+			throw new \InvalidArgumentException(sprintf('Argument should be a string, %s given.', gettype($str)));
+		}
+
 		// dont wrap expressions
 		if(preg_match('#(\*|\(|\)|\+|\-|\s)#', $str)) {
 			return $str;

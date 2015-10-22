@@ -125,6 +125,18 @@ class Query {
 	}
 
 	public function table($table) {
+		if($table instanceof \Closure) {
+			$query = clone $this;
+
+			$alias = $table($query->reset());
+
+			$this->table = sprintf('(%s) AS %s', $query->getSqlString(), $this->grammar->wrap($alias));
+
+			$this->values = array_merge($query->getBindings(), $this->values);
+
+			return $this;
+		}
+
 		$this->table = $this->grammar->wrap($table);
 
 		return $this;
@@ -338,6 +350,27 @@ class Query {
 	}
 
 	public function join($table, $left, $op, $right, $type = 'INNER') {
+
+		if($table instanceof \Closure) {
+			$query = clone $this;
+
+			$alias = $table($query->reset());
+
+			$table = sprintf('(%s) AS %s', $query->getSqlString(), $this->grammar->wrap($alias));
+
+			$this->values = array_merge($query->getBindings(), $this->values);
+
+			$this->join[] = sprintf('%s JOIN %s ON(%s %s %s)',
+				$type,
+				$table,
+				$this->grammar->column($left),
+				$op,
+				$this->grammar->column($right)
+			);
+
+			return $this;
+		}
+
 		$this->join[] = sprintf('%s JOIN %s ON(%s %s %s)',
 			$type,
 			$this->grammar->wrap($table),

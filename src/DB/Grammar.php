@@ -4,6 +4,8 @@ namespace DB;
 
 class Grammar {
 
+	protected $aliasPattern = ' AS ';
+
 	protected $wrapper = '"%s"';
 
 	protected $supported = [
@@ -25,7 +27,7 @@ class Grammar {
 
 	public function column($str) {
 		// handle alias
-		if(strpos($str, ' AS ')) {
+		if(strpos($str, $this->aliasPattern)) {
 			return $this->alias($str);
 		}
 
@@ -33,9 +35,9 @@ class Grammar {
 	}
 
 	protected function alias($str) {
-		list($column, $alias) = explode(' AS ', $str);
+		list($column, $alias) = explode($this->aliasPattern, $str);
 
-		return sprintf('%s AS %s', $this->wrap($column), $this->wrap($alias));
+		return $this->wrap($column) . $this->aliasPattern . $this->wrap($alias);
 	}
 
 	public function wrap($str) {

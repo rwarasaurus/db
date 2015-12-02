@@ -25,8 +25,6 @@ class Query {
 
 	protected $select = '*';
 
-	protected $values = [];
-
 	protected $groups = [];
 
 	protected $sorts = [];
@@ -40,6 +38,8 @@ class Query {
 	protected $where = [];
 
 	protected $join = [];
+
+	protected $values = [];
 
 	public function __construct(PDO $pdo, RowInterface $prototype = null, ResultInterface $result = null, GrammarInterface $grammar = null) {
 		$this->pdo = $pdo;
@@ -124,17 +124,21 @@ class Query {
 		return $this;
 	}
 
+	public function tableSubquery(\Closure $table) {
+		$query = clone $this;
+
+		$alias = $table($query->reset());
+
+		$this->table = sprintf('(%s) AS %s', $query->getSqlString(), $this->grammar->wrap($alias));
+
+		$this->values = array_merge($query->getBindings(), $this->values);
+
+		return $this;
+	}
+
 	public function table($table) {
 		if($table instanceof \Closure) {
-			$query = clone $this;
-
-			$alias = $table($query->reset());
-
-			$this->table = sprintf('(%s) AS %s', $query->getSqlString(), $this->grammar->wrap($alias));
-
-			$this->values = array_merge($query->getBindings(), $this->values);
-
-			return $this;
+			return $this->tableSubquery($table);
 		}
 
 		$this->table = $this->grammar->wrap($table);
@@ -170,10 +174,10 @@ class Query {
 		$this->select = '*';
 		$this->table = null;
 		$this->where = [];
+		$this->values = [];
 		$this->join = [];
 		$this->groups = [];
 		$this->sorts = [];
-		$this->values = [];
 		$this->limit = null;
 		$this->offset = null;
 		$this->append_condition = false;
@@ -229,15 +233,19 @@ class Query {
 		$this->where[] = ')';
 	}
 
+	protected function whereNested(\Closure $key, $condition = 'AND') {
+		$this->nest();
+		$key($this);
+		$this->unnest();
+
+		return $this;
+	}
+
 	public function where($key, $op = null, $value = null, $condition = 'AND') {
 		if($this->append_condition) $this->where[] = $condition;
 
 		if($key instanceof \Closure) {
-			$this->nest();
-			$key($this);
-			$this->unnest();
-
-			return $this;
+			return $this->whereNested($key, $condition);
 		}
 
 		$this->where[] = sprintf('%s %s ?', $this->grammar->column($key), $op);
@@ -349,26 +357,57 @@ class Query {
 		return $this->whereNotIn($key, $values, 'OR');
 	}
 
+	protected function getColumnOrValue($value) {
+		if(strpos($value, '.')) {
+			return $this->grammar->column($value);
+		}
+
+		$this->values[] = $value;
+
+		return '?';
+	}
+
+	public function joinColumns($table, array $conditions, $type = 'INNER') {
+		$where = [];
+
+		foreach($conditions as $left => $right) {
+			$where[] = sprintf('%s = %s', $this->getColumnOrValue($left), $this->getColumnOrValue($right));
+		}
+
+		$conditions = implode(' AND ', $where);
+
+		$this->join[] = sprintf('%s JOIN %s ON(%s)', $type, $this->grammar->column($table), $conditions);
+
+		return $this;
+	}
+
+	public function leftJoinColumns($table, array $conditions) {
+		return $this->joinColumns($table, $conditions, 'LEFT');
+	}
+
+	public function joinSubquery(\Closure $table, $left, $op, $right, $type = 'INNER') {
+		$query = clone $this;
+
+		$alias = $table($query->reset());
+
+		$table = sprintf('(%s) AS %s', $query->getSqlString(), $this->grammar->wrap($alias));
+
+		$this->values = array_merge($query->getBindings(), $this->values);
+
+		$this->join[] = sprintf('%s JOIN %s ON(%s %s %s)',
+			$type,
+			$table,
+			$this->grammar->column($left),
+			$op,
+			$this->grammar->column($right)
+		);
+
+		return $this;
+	}
+
 	public function join($table, $left, $op, $right, $type = 'INNER') {
-
 		if($table instanceof \Closure) {
-			$query = clone $this;
-
-			$alias = $table($query->reset());
-
-			$table = sprintf('(%s) AS %s', $query->getSqlString(), $this->grammar->wrap($alias));
-
-			$this->values = array_merge($query->getBindings(), $this->values);
-
-			$this->join[] = sprintf('%s JOIN %s ON(%s %s %s)',
-				$type,
-				$table,
-				$this->grammar->column($left),
-				$op,
-				$this->grammar->column($right)
-			);
-
-			return $this;
+			return $this->joinSubquery($table, $left, $op, $right, $type);
 		}
 
 		$this->join[] = sprintf('%s JOIN %s ON(%s %s %s)',
@@ -498,31 +537,6 @@ class Query {
 		$res = $this->exec($sql, $this->values);
 
 		return $res->getResult() ? $res->getStatement()->rowCount() : false;
-	}
-
-	public function union(...$queries) {
-		$join = [];
-		$values = [];
-
-		foreach($queries as $query) {
-			$join[] = sprintf('(%s)', $query->getSqlString());
-			$values = array_merge($values, $query->getBindings());
-		}
-
-		$sql = implode(' UNION ', $join);
-
-		$res = $this->exec($sql, $values);
-		$sth = $res->getStatement();
-
-		$results = [];
-
-		while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
-			$results[] = $this->hydrate($row);
-		}
-
-		$sth->closeCursor();
-
-		return $results;
 	}
 
 }

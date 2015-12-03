@@ -2,13 +2,11 @@
 
 namespace DB;
 
-class GrammarInterface {
+interface GrammarInterface {
 
 	public function columns(array $columns);
 
 	public function column($str);
-
-	public function alias($str);
 
 	public function wrap($str);
 

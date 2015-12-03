@@ -118,6 +118,10 @@ class Query {
 		return $this->getLastProfile()['sql'];
 	}
 
+	public function bindValue($key, $value) {
+		$this->bindings[$key] = $value;
+	}
+
 	public function select(array $columns) {
 		$this->select = $this->grammar->columns($columns);
 

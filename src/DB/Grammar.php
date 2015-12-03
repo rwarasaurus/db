@@ -2,7 +2,7 @@
 
 namespace DB;
 
-class Grammar {
+class Grammar implements GrammarInterface {
 
 	protected $aliasPattern = ' AS ';
 

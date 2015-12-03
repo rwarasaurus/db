@@ -160,4 +160,17 @@ class QuerySpec extends ObjectBehavior {
 		$this->getLastSqlString()->shouldBeEqualTo('SELECT "books"."title" FROM "books" INNER JOIN "authors" ON("authors"."id" = "books"."author") WHERE "authors"."id" = ? AND ( "books"."id" = ? OR "books"."id" = ? ) AND "books"."title" NOT LIKE ?');
 	}
 
+	public function it_should_run_joins_and_where_in_any_order() {
+		$this->table('books')
+			->where('authors.id', '=', 6)
+			->joinColumns('authors', [
+				'authors.id' => 'books.author',
+				'authors.name' => 'foo',
+			])
+			->where('books.title', 'NOT LIKE', 'bar');
+
+		$this->getSqlString()->shouldBeEqualTo('SELECT * FROM "books" INNER JOIN "authors" ON("authors"."id" = "books"."author" AND "authors"."name" = ?) WHERE "authors"."id" = ? AND "books"."title" NOT LIKE ?');
+		$this->getBindings()->shouldBeEqualTo(['foo', 6, 'bar']);
+	}
+
 }

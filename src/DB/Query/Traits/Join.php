@@ -18,6 +18,20 @@ trait Join {
 		return $this->join($table, $left, $op, $right, 'LEFT');
 	}
 
+	public function joinWhere($table, \Closure $predicate, $type = 'INNER') {
+		$join = new \DB\Query\Join($table, $type, $this->grammar);
+
+		$predicate($join);
+
+		$this->joins[] = $join;
+
+		return $this;
+	}
+
+	public function leftJoinWhere($table, \Closure $predicate) {
+		return $this->joinWhere($table, $predicate, 'LEFT');
+	}
+
 	public function joinColumns($table, array $columns, $type = 'INNER') {
 		$join = new \DB\Query\Join($table, $type, $this->grammar);
 

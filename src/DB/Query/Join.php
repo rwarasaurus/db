@@ -32,6 +32,10 @@ class Join extends AbstractWrapper implements FragmentInterface, BindingsInterfa
 		return $this;
 	}
 
+	public function __invoke($left, $op, $right) {
+		return $this->constrant($left, $op, $right);
+	}
+
 	public function and($left, $op, $right) {
 		return $this->constrant($left, $op, $right);
 	}

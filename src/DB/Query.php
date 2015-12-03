@@ -6,7 +6,7 @@ use PDO;
 use PDOException;
 use DB\Query\Expression;
 
-class Query {
+class Query implements QueryInterface {
 
 	protected $pdo;
 

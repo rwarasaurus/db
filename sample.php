@@ -47,7 +47,6 @@ foreach(range(1, 50) as $id) {
 	]);
 }
 
-/*
 $results = $query->table('books')
 	->select(['books.title', 'categories.name'])
 	->where('books.published_date', '>=', $now)
@@ -55,10 +54,10 @@ $results = $query->table('books')
 	->whereNested(function($where) {
 		$where('categories.id', '=', 7)->or('categories.id', '=', 2);
 	})
-	->joinColumns('reviews', ['reviews.book' => 'books.id', 'reviews.rating' => 5])
+	->joinWhere('reviews', function($join) {
+		$join('reviews.book', '=', 'books.id')->and('reviews.rating', '=', 5);
+	})
 	->get();
-*/
 
-$query->table('reviews')->where('book', '=', 1)->incr('rating');
 
 echo $query->getLastSqlString().PHP_EOL;

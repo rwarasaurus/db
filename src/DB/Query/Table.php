@@ -8,15 +8,22 @@ class Table implements FragmentInterface {
 
 	protected $table;
 
-	protected $grammer;
+	protected $grammar;
 
-	public function __construct($table, GrammarInterface $grammer) {
+	public function __construct(GrammarInterface $grammar) {
+		$this->grammar = $grammar;
+	}
+
+	public function name() {
+		return $this->table;
+	}
+
+	public function from($table) {
 		$this->table = $table;
-		$this->grammer = $grammer;
 	}
 
 	public function getSqlString() {
-		$table = $this->grammer->column($this->table);
+		$table = $this->grammar->wrap($this->table);
 
 		return sprintf('FROM %s', $table);
 	}

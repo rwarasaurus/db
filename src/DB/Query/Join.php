@@ -6,20 +6,18 @@ use DB\GrammarInterface;
 
 class Join extends AbstractWrapper implements FragmentInterface, BindingsInterface {
 
-	const TYPE = 'INNER';
-
 	protected $table;
 
-	protected $grammer;
+	protected $grammar;
 
 	protected $constrants;
 
 	protected $bindings;
 
-	public function __construct($table, $type, GrammarInterface $grammer) {
+	public function __construct($table, $type, GrammarInterface $grammar) {
 		$this->table = $table;
 		$this->type = $type;
-		$this->grammer = $grammer;
+		$this->grammar = $grammar;
 		$this->constrants = [];
 		$this->bindings = [];
 	}
@@ -29,7 +27,7 @@ class Join extends AbstractWrapper implements FragmentInterface, BindingsInterfa
 			$this->constrants[] = $type;
 		}
 
-		$this->constrants[] = sprintf('%s %s %s', $this->wrap($left), $op, $this->wrap($right));
+		$this->constrants[] = sprintf('%s %s %s', $this->grammar->column($left), $op, $this->wrap($right));
 
 		return $this;
 	}
@@ -43,7 +41,7 @@ class Join extends AbstractWrapper implements FragmentInterface, BindingsInterfa
 	}
 
 	public function getSqlString() {
-		$table = $this->grammer->wrap($this->table);
+		$table = $this->grammar->wrap($this->table);
 
 		$constrants = implode(' ', $this->constrants);
 

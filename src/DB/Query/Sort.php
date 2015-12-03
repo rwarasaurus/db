@@ -6,26 +6,23 @@ use DB\GrammarInterface;
 
 class Sort implements FragmentInterface {
 
-	protected $grammer;
+	protected $grammar;
 
-	protected $column;
+	protected $columns;
 
-	protected $mode;
+	public function __construct(GrammarInterface $grammar) {
+		$this->grammar = $grammar;
+		$this->columns = [];
+	}
 
-	public function __construct($column, $mode, GrammarInterface $grammer) {
-		$this->grammer = $grammer;
-		$this->column = $column;
-		$this->mode = $mode;
+	public function by($column, $mode = 'asc') {
+		$this->columns[] = sprintf('%s %s', $this->grammar->column($column), strtoupper($mode));
 	}
 
 	public function getSqlString() {
-		$column = $this->grammer->column($this->column);
+		if(empty($this->columns)) return '';
 
-		return sprintf('ORDER BY %s %s', $column, $this->mode);
-	}
-
-	public function getBindings() {
-		return [];
+		return sprintf('ORDER BY %s', implode(', ', $this->columns));
 	}
 
 }

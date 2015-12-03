@@ -6,19 +6,23 @@ use DB\GrammarInterface;
 
 class Group implements FragmentInterface {
 
-	protected $grammer;
+	protected $grammar;
 
-	protected $column;
+	protected $columns;
 
-	public function __construct($column, GrammarInterface $grammer) {
-		$this->grammer = $grammer;
-		$this->column = $column;
+	public function __construct(GrammarInterface $grammar) {
+		$this->grammar = $grammar;
+		$this->columns = [];
+	}
+
+	public function by($column) {
+		$this->columns[] = $this->grammar->column($column);
 	}
 
 	public function getSqlString() {
-		$column = $this->grammer->column($this->column);
+		if(empty($this->columns)) return '';
 
-		return sprintf('GROUP BY %s', $column);
+		return sprintf('GROUP BY %s', implode(', ', $this->columns));
 	}
 
 }

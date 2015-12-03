@@ -8,15 +8,23 @@ class Select implements FragmentInterface {
 
 	protected $columns;
 
-	protected $grammer;
+	protected $grammar;
 
-	public function __construct(array $columns, GrammarInterface $grammer) {
+	public function __construct(GrammarInterface $grammar) {
+		$this->columns = [];
+		$this->grammar = $grammar;
+	}
+
+	public function columns(array $columns) {
 		$this->columns = $columns;
-		$this->grammer = $grammer;
 	}
 
 	public function getSqlString() {
-		return sprintf('SELECT %s', $this->grammer->columns($this->columns));
+		if(empty($this->columns)) {
+			$this->columns = ['*'];
+		}
+
+		return sprintf('SELECT %s', $this->grammar->columns($this->columns));
 	}
 
 }

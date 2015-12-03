@@ -4,6 +4,7 @@ namespace DB;
 
 use PDO;
 use PDOException;
+use DB\Query\Expression;
 
 class Query {
 
@@ -21,27 +22,7 @@ class Query {
 
 	protected $start;
 
-	protected $table;
-
-	protected $select = '*';
-
-	protected $groups = [];
-
-	protected $sorts = [];
-
-	protected $limit;
-
-	protected $offset;
-
-	protected $append_condition = false;
-
-	protected $where = [];
-
-	protected $join = [];
-
-	protected $values = [];
-
-	public function __construct(PDO $pdo, RowInterface $prototype = null, ResultInterface $result = null, GrammarInterface $grammar = null) {
+	public function __construct(PDO $pdo, RowInterface $prototype = null, ResultInterface $result = null, GrammarInterface $grammar = null, BuilderInterface $builder = null) {
 		$this->pdo = $pdo;
 		$this->prototype = null === $prototype ? new Row : $prototype;
 		$this->result = null === $result ? new Result : $result;
@@ -52,6 +33,7 @@ class Query {
 		}
 
 		$this->grammar = $grammar;
+		$this->builder = null === $builder ? new Query\Builder($grammar) : $builder;
 	}
 
 	public function prototype(RowInterface $prototype) {
@@ -115,412 +97,84 @@ class Query {
 	}
 
 	public function getLastSqlString() {
-		return $this->getLastProfile()['sql'];
+		$row = $this->getLastProfile();
+
+		return $row['sql'];
 	}
 
-	public function bindValue($key, $value) {
-		$this->bindings[$key] = $value;
-	}
-
-	public function select(array $columns) {
-		$this->select = $this->grammar->columns($columns);
+	public function __call($method, $args) {
+		call_user_func_array([$this->builder, $method], $args);
 
 		return $this;
 	}
 
-	public function tableSubquery(\Closure $table) {
-		$query = clone $this;
+	public function insert(array $values) {
+		$this->builder->insert($values);
 
-		$alias = $table($query->reset());
+		$response = $this->exec($this->builder->getSqlString(), $this->builder->getBindings());
 
-		$this->table = sprintf('(%s) AS %s', $query->getSqlString(), $this->grammar->wrap($alias));
-
-		$this->values = array_merge($query->getBindings(), $this->values);
-
-		return $this;
+		return $response->getResult() ? $this->pdo->lastInsertId() : false;
 	}
 
-	public function table($table) {
-		if($table instanceof \Closure) {
-			return $this->tableSubquery($table);
-		}
+	public function update(array $values) {
+		$this->builder->update($values);
 
-		$this->table = $this->grammar->wrap($table);
+		$response = $this->exec($this->builder->getSqlString(), $this->builder->getBindings());
 
-		return $this;
-	}
-
-	public function group($column) {
-		$this->groups[] = $this->grammar->column($column);
-
-		return $this;
-	}
-
-	public function sort($column, $mode = 'ASC') {
-		$this->sorts[] = sprintf('%s %s', $this->grammar->column($column), strtoupper($mode));
-
-		return $this;
-	}
-
-	public function take($perpage) {
-		$this->limit = (int) $perpage;
-
-		return $this;
-	}
-
-	public function skip($offset) {
-		$this->offset = (int) $offset;
-
-		return $this;
-	}
-
-	public function reset() {
-		$this->select = '*';
-		$this->table = null;
-		$this->where = [];
-		$this->values = [];
-		$this->join = [];
-		$this->groups = [];
-		$this->sorts = [];
-		$this->limit = null;
-		$this->offset = null;
-		$this->append_condition = false;
-
-		return $this;
-	}
-
-	public function getSqlString() {
-		$sql = 'SELECT '.$this->select;
-
-		if($this->table) {
-			$sql .= ' FROM '.$this->table;
-		}
-
-		if(count($this->join)) {
-			$sql .= ' '.implode(' ', $this->join);
-		}
-
-		if(count($this->where)) {
-			$sql .= ' WHERE '.implode(' ', $this->where);
-		}
-
-		if(count($this->groups)) {
-			$sql .= ' GROUP BY '.implode(', ', $this->groups);
-		}
-
-		if(count($this->sorts)) {
-			$sql .= ' ORDER BY '.implode(', ', $this->sorts);
-		}
-
-		if($this->limit) {
-			$sql .= ' LIMIT '.$this->limit;
-
-			if($this->offset) {
-				$sql .= ' OFFSET '.$this->offset;
-			}
-		}
-
-		return $sql;
-	}
-
-	public function getBindings() {
-		return $this->values;
-	}
-
-	protected function nest() {
-		$this->append_condition = false;
-		$this->where[] = '(';
-	}
-
-	protected function unnest() {
-		$this->append_condition = true;
-		$this->where[] = ')';
-	}
-
-	protected function whereNested(\Closure $key, $condition = 'AND') {
-		$this->nest();
-		$key($this);
-		$this->unnest();
-
-		return $this;
-	}
-
-	public function where($key, $op = null, $value = null, $condition = 'AND') {
-		if($this->append_condition) $this->where[] = $condition;
-
-		if($key instanceof \Closure) {
-			return $this->whereNested($key, $condition);
-		}
-
-		$this->where[] = sprintf('%s %s ?', $this->grammar->column($key), $op);
-		$this->values[] = $value;
-
-		$this->append_condition = true;
-
-		return $this;
-	}
-
-	public function orWhere($key, $op = null, $value = null) {
-		return $this->where($key, $op, $value, 'OR');
-	}
-
-	public function whereRaw($sql, array $values = [], $condition = 'AND') {
-		if($this->append_condition) $this->where[] = $condition;
-
-		$this->where[] = $sql;
-		$this->values = array_merge($this->values, $values);
-
-		$this->append_condition = true;
-
-		return $this;
-	}
-
-	public function orWhereRaw($sql, array $values = []) {
-		return $this->whereRaw($sql, $values, 'OR');
-	}
-
-	public function whereIsNull($key, $condition = 'AND') {
-		if($this->append_condition) $this->where[] = $condition;
-
-		$this->where[] = sprintf('%s IS NULL', $this->grammar->column($key));
-
-		$this->append_condition = true;
-
-		return $this;
-	}
-
-	public function orWhereIsNull($key) {
-		return $this->whereIsNull($key, 'OR');
-	}
-
-	public function whereIsNotNull($key, $condition = 'AND') {
-		if($this->append_condition) $this->where[] = $condition;
-
-		$this->where[] = sprintf('%s IS NOT NULL', $this->grammar->column($key));
-
-		$this->append_condition = true;
-
-		return $this;
-	}
-
-	public function orWhereIsNotNull($key) {
-		return $this->whereIsNotNull($key, 'OR');
-	}
-
-	public function whereIn($key, $values, $condition = 'AND') {
-		if($this->append_condition) $this->where[] = $condition;
-
-		// where in sub select
-		if($values instanceof \Closure) {
-			$query = clone $this;
-
-			$values($query->reset());
-
-			$this->where[] = sprintf('%s IN(%s)', $this->grammar->column($key), $query->getSqlString());
-			$this->values = array_merge($this->values, $query->getBindings());
-		}
-
-		if(is_array($values)) {
-			$this->where[] = sprintf('%s IN(%s)', $this->grammar->column($key), $this->grammar->placeholders($values));
-			$this->values = array_merge($this->values, $values);
-		}
-
-		$this->append_condition = true;
-
-		return $this;
-	}
-
-	public function orWhereIn($key, array $values) {
-		return $this->whereIn($key, $values, 'OR');
-	}
-
-	public function whereNotIn($key, $values, $condition = 'AND') {
-		if($this->append_condition) $this->where[] = $condition;
-
-		// where in sub select
-		if($values instanceof \Closure) {
-			$query = clone $this;
-
-			$values($query->reset());
-
-			$this->where[] = sprintf('%s NOT IN(%s)', $this->grammar->column($key), $query->getSqlString());
-			$this->values = array_merge($this->values, $query->getBindings());
-		}
-
-		if(is_array($values)) {
-			$this->where[] = sprintf('%s NOT IN(%s)', $this->grammar->column($key), $this->grammar->placeholders($values));
-			$this->values = array_merge($this->values, $values);
-		}
-
-		$this->append_condition = true;
-
-		return $this;
-	}
-
-	public function orWhereNotIn($key, array $values) {
-		return $this->whereNotIn($key, $values, 'OR');
-	}
-
-	protected function getColumnOrValue($value) {
-		if(strpos($value, '.')) {
-			return $this->grammar->column($value);
-		}
-
-		$this->values[] = $value;
-
-		return '?';
-	}
-
-	public function joinColumns($table, array $conditions, $type = 'INNER') {
-		$where = [];
-
-		foreach($conditions as $left => $right) {
-			$where[] = sprintf('%s = %s', $this->getColumnOrValue($left), $this->getColumnOrValue($right));
-		}
-
-		$conditions = implode(' AND ', $where);
-
-		$this->join[] = sprintf('%s JOIN %s ON(%s)', $type, $this->grammar->column($table), $conditions);
-
-		return $this;
-	}
-
-	public function leftJoinColumns($table, array $conditions) {
-		return $this->joinColumns($table, $conditions, 'LEFT');
-	}
-
-	public function joinSubquery(\Closure $table, $left, $op, $right, $type = 'INNER') {
-		$query = clone $this;
-
-		$alias = $table($query->reset());
-
-		$table = sprintf('(%s) AS %s', $query->getSqlString(), $this->grammar->wrap($alias));
-
-		$this->values = array_merge($query->getBindings(), $this->values);
-
-		$this->join[] = sprintf('%s JOIN %s ON(%s %s %s)',
-			$type,
-			$table,
-			$this->grammar->column($left),
-			$op,
-			$this->grammar->column($right)
-		);
-
-		return $this;
-	}
-
-	public function join($table, $left, $op, $right, $type = 'INNER') {
-		if($table instanceof \Closure) {
-			return $this->joinSubquery($table, $left, $op, $right, $type);
-		}
-
-		$this->join[] = sprintf('%s JOIN %s ON(%s %s %s)',
-			$type,
-			$this->grammar->wrap($table),
-			$this->grammar->column($left),
-			$op,
-			$this->grammar->column($right)
-		);
-
-		return $this;
-	}
-
-	public function leftJoin($table, $left, $op, $right) {
-		return $this->join($table, $left, $op, $right, 'LEFT');
-	}
-
-	public function joinRaw($sql) {
-		$this->join[] = $sql;
-
-		return $this;
-	}
-
-	public function update(array $fields) {
-		$sets = [];
-		$values = [];
-
-		foreach($fields as $key => $value) {
-			$sets[] =  $this->grammar->column($key) . ' = ?';
-			$values[] = $value;
-		}
-
-		// prepend values before where values
-		$this->values = array_merge($values, $this->values);
-
-		$sql = sprintf('UPDATE %s SET %s', $this->table, implode(', ', $sets));
-
-		if(count($this->where)) {
-			$sql .= ' WHERE '.implode(' ', $this->where);
-		}
-
-		$res = $this->exec($sql, $this->values);
-
-		return $res->getResult() ? $res->getStatement()->rowCount() : false;
-	}
-
-	public function insert(array $data) {
-		$columns = $this->grammar->columns(array_keys($data));
-		$values = array_values($data);
-
-		$sql = sprintf('INSERT INTO %s (%s) VALUES(%s)', $this->table, $columns, $this->grammar->placeholders($data));
-		$res = $this->exec($sql, $values);
-
-		return $res->getResult() ? $this->pdo->lastInsertId() : false;
+		return $response->getResult() ? $response->getStatement()->rowCount() : false;
 	}
 
 	public function delete() {
-		$sql = sprintf('DELETE FROM %s', $this->table);
+		$this->builder->delete();
 
-		if(count($this->where)) {
-			$sql .= ' WHERE '.implode(' ', $this->where);
-		}
+		$response = $this->exec($this->builder->getSqlString(), $this->builder->getBindings());
 
-		$res = $this->exec($sql, $this->values);
-
-		return $res->getResult() ? $res->getStatement()->rowCount() : false;
+		return $response->getResult() ? $response->getStatement()->rowCount() : false;
 	}
 
 	public function get() {
-		$res = $this->exec($this->getSqlString(), $this->getBindings());
-		$sth = $res->getStatement();
+		$response = $this->exec($this->builder->getSqlString(), $this->builder->getBindings());
+		$statement = $response->getStatement();
 
 		$results = [];
 
-		while($row = $sth->fetch(PDO::FETCH_ASSOC)) {
+		while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
 			$results[] = $this->hydrate($row);
 		}
 
-		$sth->closeCursor();
+		$statement->closeCursor();
 
 		return $results;
 	}
 
 	public function fetch() {
-		$res = $this->exec($this->getSqlString(), $this->getBindings());
+		$response = $this->exec($this->builder->getSqlString(), $this->builder->getBindings());
 
-		$row = $res->getStatement()->fetch(PDO::FETCH_ASSOC);
+		$row = $response->getStatement()->fetch(PDO::FETCH_ASSOC);
 
 		return is_array($row) ? $this->hydrate($row) : false;
 	}
 
 	public function column($column = 0) {
-		$res = $this->exec($this->getSqlString(), $this->getBindings());
+		$response = $this->exec($this->builder->getSqlString(), $this->builder->getBindings());
 
-		return $res->getStatement()->fetchColumn();
+		return $response->getStatement()->fetchColumn($column);
 	}
 
 	public function count($column = '*') {
 		$func = sprintf('COUNT(%s)', $this->grammar->column($column));
-		$res = $this->select([$func])->exec($this->getSqlString(), $this->values);
 
-		return $res->getStatement()->fetchColumn();
+		$this->builder->select([$func]);
+
+		return $this->column();
 	}
 
 	public function sum($column) {
 		$func = sprintf('SUM(%s)', $this->grammar->column($column));
-		$res = $this->select([$func])->exec($this->getSqlString(), $this->values);
 
-		return $res->getStatement()->fetchColumn();
+		$this->builder->select([$func]);
+
+		return $this->column();
 	}
 
 	public function incr($column) {
@@ -532,15 +186,9 @@ class Query {
 	}
 
 	protected function modify($column, $amount) {
-		$sql = sprintf('UPDATE %1$s SET %2$s = %2$s + %3$s', $this->table, $this->grammar->column($column), $amount);
-
-		if(count($this->where)) {
-			$sql .= ' WHERE '.implode(' ', $this->where);
-		}
-
-		$res = $this->exec($sql, $this->values);
-
-		return $res->getResult() ? $res->getStatement()->rowCount() : false;
+		return $this->update([
+			$column => new Expression(sprintf('%s + %d', $this->grammar->column($column), $amount))
+		]);
 	}
 
 }

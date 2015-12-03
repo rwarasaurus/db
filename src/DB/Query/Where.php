@@ -6,7 +6,7 @@ use DB\GrammarInterface;
 
 class Where extends AbstractWrapper implements FragmentInterface, BindingsInterface {
 
-	protected $grammer;
+	protected $grammar;
 
 	protected $constrants;
 
@@ -14,8 +14,8 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 
 	protected $needsConjunction;
 
-	public function __construct(GrammarInterface $grammer) {
-		$this->grammer = $grammer;
+	public function __construct(GrammarInterface $grammar) {
+		$this->grammar = $grammar;
 		$this->needsConjunction = false;
 		$this->constrants = [];
 		$this->bindings = [];
@@ -26,7 +26,7 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 			$this->constrants[] = $type;
 		}
 
-		$this->constrants[] = sprintf('%s %s %s', $this->wrap($left), $op, $this->wrap($right));
+		$this->constrants[] = sprintf('%s %s %s', $this->grammar->column($left), $op, $this->wrap($right));
 
 		$this->needsConjunction = true;
 
@@ -69,8 +69,16 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 		return $this->constrant($column, 'IN', $values);
 	}
 
+	public function orIn($column, array $values) {
+		return $this->constrant($column, 'IN', $values, 'OR');
+	}
+
 	public function notIn($column, array $values) {
 		return $this->constrant($column, 'NOT IN', $values);
+	}
+
+	public function orNotIn($column, array $values) {
+		return $this->constrant($column, 'NOT IN', $values, 'OR');
 	}
 
 	public function inQuery($column, BuilderInterface $query) {
@@ -81,7 +89,25 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 		return $this->constrant($column, 'NOT IN', $query);
 	}
 
+	public function isNull($column) {
+		return $this->constrant($column, 'IS', null);
+	}
+
+	public function orIsNull($column) {
+		return $this->constrant($column, 'IS', null, 'OR');
+	}
+
+	public function isNotNull($column) {
+		return $this->constrant($column, 'IS NOT', null);
+	}
+
+	public function orIsNotNull($column) {
+		return $this->constrant($column, 'IS NOT', null, 'OR');
+	}
+
 	public function getSqlString() {
+		if(empty($this->constrants)) return '';
+
 		return 'WHERE ' . implode(' ', $this->constrants);
 	}
 

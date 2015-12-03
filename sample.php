@@ -2,26 +2,63 @@
 
 require __DIR__ . '/vendor/autoload.php';
 
-$query = new DB\Query\Builder();
+$pdo = new PDO('sqlite::memory:');
+$pdo->exec('CREATE TABLE books (id INT, author INT, category INT, title TEXT, published_date TEXT)');
+$pdo->exec('CREATE TABLE authors (id INT, name TEXT)');
+$pdo->exec('CREATE TABLE categories (id INT, name TEXT)');
+$pdo->exec('CREATE TABLE reviews (id INT, book INT, rating INT, notes TEXT)');
 
-$query->select(['books.id'])
-	->table('books')
-	->join('authors', 'authors.id', '=', 'books.author')
-	->where('authors.id', '=', 4)
-	->joinColumns('meta', ['meta.object' => 'books.id', 'meta.key' => 4.5])
-	->where('meta.value', '>', '2')
-	->group('books.author')
-	->whereInQuery('books.category', function($query) {
-		$query->select(['categories.id'])->table('categories')
-			->joinColumns('meta', ['meta.object' => 'books.id', 'meta.key' => 'notes'])
-			->where('categories.slug', '=', 'gaming');
+$query = new DB\Query($pdo);
+
+$faker = Faker\Factory::create();
+
+foreach(range(1, 20) as $id) {
+	$query->table('reviews')->insert([
+		'id' => $id,
+		'book' => rand(1, 50),
+		'rating' => rand(1, 5),
+		'notes' => $faker->text,
+	]);
+}
+
+foreach(range(1, 20) as $id) {
+	$query->table('authors')->insert([
+		'id' => $id,
+		'name' => $faker->name,
+	]);
+}
+
+foreach(range(1, 20) as $id) {
+	$query->table('categories')->insert([
+		'id' => $id,
+		'name' => $faker->word,
+	]);
+}
+
+$now = date('Y-m-d H:i:s');
+
+foreach(range(1, 50) as $id) {
+	$query->table('books')->insert([
+		'id' => $id,
+		'author' => rand(1, 20),
+		'category' => rand(1, 20),
+		'title' => $faker->sentence(rand(2, 8)),
+		'published_date' => $now,
+	]);
+}
+
+/*
+$results = $query->table('books')
+	->select(['books.title', 'categories.name'])
+	->where('books.published_date', '>=', $now)
+	->join('categories', 'categories.id', '=', 'books.category')
+	->whereNested(function($where) {
+		$where('categories.id', '=', 7)->or('categories.id', '=', 2);
 	})
-	->orWhereNested(function($where) {
-		$where('meta.value', '<', '200')->and('meta.value', '>', '300');
-	})
-	->leftJoin('reviews', 'reviews.book', '=', 'books.id')
-	->whereIn('books.status', ['published', 'archived'])
-	;
+	->joinColumns('reviews', ['reviews.book' => 'books.id', 'reviews.rating' => 5])
+	->get();
+*/
 
+$query->table('reviews')->where('book', '=', 1)->incr('rating');
 
-var_dump($query->getSqlString(), $query->getBindings());
+echo $query->getLastSqlString().PHP_EOL;

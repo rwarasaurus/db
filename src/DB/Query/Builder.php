@@ -6,7 +6,7 @@ use DB\GrammarInterface;
 
 class Builder implements BuilderInterface {
 
-	use Traits\Where, Traits\Join;
+	use BuilderTraits\Where, BuilderTraits\Join;
 
 	protected $grammar;
 
@@ -55,6 +55,14 @@ class Builder implements BuilderInterface {
 		$this->offset = null;
 
 		return $this;
+	}
+
+	protected function subQuery(\Closure $predicate) {
+		$query = new static($this->grammar);
+
+		$predicate($query);
+
+		return $query;
 	}
 
 	public function select(array $columns) {

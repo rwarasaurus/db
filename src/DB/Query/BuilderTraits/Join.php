@@ -1,6 +1,6 @@
 <?php
 
-namespace DB\Query\Traits;
+namespace DB\Query\BuilderTraits;
 
 trait Join {
 

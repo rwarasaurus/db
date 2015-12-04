@@ -1,6 +1,6 @@
 <?php
 
-namespace DB\Query\Traits;
+namespace DB\Query\BuilderTraits;
 
 trait Where {
 
@@ -42,14 +42,6 @@ trait Where {
 		$this->where->notIn($column, $values);
 
 		return $this;
-	}
-
-	protected function subQuery(\Closure $predicate) {
-		$query = new static($this->grammar);
-
-		$predicate($query);
-
-		return $query;
 	}
 
 	public function whereInQuery($column, \Closure $predicate) {

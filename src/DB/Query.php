@@ -36,6 +36,18 @@ class Query implements QueryInterface {
 		$this->builder = null === $builder ? new Query\Builder($grammar) : $builder;
 	}
 
+	public function getBuilder() {
+		return $this->builder;
+	}
+
+	public function setBuilder(BuilderInterface $builder) {
+		$this->builder = $builder;
+	}
+
+	public function __clone() {
+		$this->builder = clone $this->builder;
+	}
+
 	public function prototype(RowInterface $prototype) {
 		$this->prototype = $prototype;
 

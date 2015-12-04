@@ -23,6 +23,10 @@ class Table implements FragmentInterface {
 	}
 
 	public function getSqlString() {
+		if(null === $this->table) {
+			throw new \InvalidArgumentException('Table name has not been set');
+		}
+
 		$table = $this->grammar->wrap($this->table);
 
 		return sprintf('FROM %s', $table);

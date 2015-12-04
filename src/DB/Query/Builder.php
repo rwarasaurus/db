@@ -33,6 +33,14 @@ class Builder implements BuilderInterface {
 		$this->reset();
 	}
 
+	public function __clone() {
+		$this->select = clone $this->select;
+		$this->table = clone $this->table;
+		$this->where = clone $this->where;
+		$this->group = clone $this->group;
+		$this->sort = clone $this->sort;
+	}
+
 	public function reset() {
 		$this->insert = null;
 		$this->update = null;

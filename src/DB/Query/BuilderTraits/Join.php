@@ -48,4 +48,12 @@ trait Join {
 		return $this->joinColumns($table, $columns, 'LEFT');
 	}
 
+	public function joinQuery(\Closure $predicate, $alias, $left, $op, $right) {
+		$this->join($this->subQuery($predicate, $alias), $left, $op, $right);
+	}
+
+	public function leftJoinQuery(\Closure $predicate, $alias, $left, $op, $right) {
+		$this->leftJoin($this->subQuery($predicate, $alias), $left, $op, $right);
+	}
+
 }

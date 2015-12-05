@@ -28,6 +28,8 @@ class Builder implements BuilderInterface {
 
 	protected $offset;
 
+	protected $alias;
+
 	public function __construct(GrammarInterface $grammar) {
 		$this->grammar = $grammar;
 		$this->reset();
@@ -53,16 +55,27 @@ class Builder implements BuilderInterface {
 		$this->sort = new Sort($this->grammar);
 		$this->limit = null;
 		$this->offset = null;
+		$this->alias = null;
 
 		return $this;
 	}
 
-	protected function subQuery(\Closure $predicate) {
+	protected function subQuery(\Closure $predicate, $alias = null) {
 		$query = new static($this->grammar);
 
 		$predicate($query);
 
+		if($alias) $query->setAlias($alias);
+
 		return $query;
+	}
+
+	public function setAlias($alias) {
+		$this->alias = $alias;
+	}
+
+	public function getAlias() {
+		return $this->alias;
 	}
 
 	public function select(array $columns) {

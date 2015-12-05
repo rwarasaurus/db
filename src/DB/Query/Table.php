@@ -4,11 +4,13 @@ namespace DB\Query;
 
 use DB\GrammarInterface;
 
-class Table implements FragmentInterface {
+class Table extends AbstractWrapper implements FragmentInterface, BindingsInterface {
 
 	protected $table;
 
 	protected $grammar;
+
+	protected $bindings;
 
 	public function __construct(GrammarInterface $grammar) {
 		$this->grammar = $grammar;
@@ -27,9 +29,13 @@ class Table implements FragmentInterface {
 			throw new \InvalidArgumentException('Table name has not been set');
 		}
 
-		$table = $this->grammar->wrap($this->table);
+		$table = $this->table instanceof \Closure ? $this->wrap($this->table) : $this->grammar->wrap($this->table);
 
 		return sprintf('FROM %s', $table);
+	}
+
+	public function getBindings() {
+		return $this->bindings;
 	}
 
 }

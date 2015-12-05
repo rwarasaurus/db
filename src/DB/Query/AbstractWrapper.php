@@ -18,6 +18,9 @@ abstract class AbstractWrapper {
 		// if its a subquery
 		if($value instanceof BuilderInterface) {
 			$this->bindings = array_merge($this->bindings, $value->getBindings());
+			if($alias = $value->getAlias()) {
+				return sprintf('(%s) AS %s', $value->getSqlString(), $this->grammar->wrap($alias));
+			}
 			return sprintf('(%s)', $value->getSqlString());
 		}
 

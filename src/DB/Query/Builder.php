@@ -102,6 +102,12 @@ class Builder implements BuilderInterface {
 		return $this;
 	}
 
+	public function sortField($field, array $keys) {
+		$this->sort->field($field, $keys);
+
+		return $this;
+	}
+
 	public function take($limit) {
 		$this->limit = $limit;
 

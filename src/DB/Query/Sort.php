@@ -19,6 +19,10 @@ class Sort implements FragmentInterface {
 		$this->columns[] = sprintf('%s %s', $this->grammar->column($column), strtoupper($mode));
 	}
 
+	public function field($field, array $keys) {
+		$this->columns[] = sprintf('FIELD(%s, %s)', $this->grammar->column($field), implode(', ', $keys));
+	}
+
 	public function getSqlString() {
 		if(empty($this->columns)) return '';
 

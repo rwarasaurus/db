@@ -16,10 +16,6 @@ class Table extends AbstractWrapper implements FragmentInterface, BindingsInterf
 		$this->grammar = $grammar;
 	}
 
-	public function name() {
-		return $this->table;
-	}
-
 	public function from($table) {
 		$this->table = $table;
 	}
@@ -29,7 +25,7 @@ class Table extends AbstractWrapper implements FragmentInterface, BindingsInterf
 			throw new \InvalidArgumentException('Table name has not been set');
 		}
 
-		$table = $this->table instanceof \Closure ? $this->wrap($this->table) : $this->grammar->wrap($this->table);
+		$table = $this->table instanceof BuilderInterface ? $this->wrap($this->table) : $this->grammar->wrap($this->table);
 
 		return sprintf('FROM %s', $table);
 	}

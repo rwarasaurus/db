@@ -90,6 +90,12 @@ class Builder implements BuilderInterface {
 		return $this;
 	}
 
+	public function tableQuery(\Closure $predicate, $alias) {
+		$this->table->from($this->subQuery($predicate, $alias));
+
+		return $this;
+	}
+
 	public function group($column) {
 		$this->group->by($column);
 

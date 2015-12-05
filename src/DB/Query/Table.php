@@ -14,6 +14,7 @@ class Table extends AbstractWrapper implements FragmentInterface, BindingsInterf
 
 	public function __construct(GrammarInterface $grammar) {
 		$this->grammar = $grammar;
+		$this->bindings = [];
 	}
 
 	public function from($table) {

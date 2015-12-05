@@ -196,7 +196,7 @@ class Builder implements BuilderInterface {
 			$bindings = $this->update->getBindings();
 		}
 		else {
-			$bindings = [];
+			$bindings = $this->table->getBindings();
 
 			foreach($this->joins as $fragment) {
 				$bindings = array_merge($bindings, $fragment->getBindings());

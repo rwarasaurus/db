@@ -17,6 +17,14 @@ class Table extends AbstractWrapper implements FragmentInterface, BindingsInterf
 		$this->bindings = [];
 	}
 
+	public function name() {
+		if($this->table instanceof BuilderInterface) {
+			throw new \RuntimeException('Table name is a query');
+		}
+
+		return $this->table;
+	}
+
 	public function from($table) {
 		$this->table = $table;
 	}

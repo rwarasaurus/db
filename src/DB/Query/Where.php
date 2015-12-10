@@ -33,16 +33,18 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 		return $this;
 	}
 
-	public function and($left, $op, $right) {
-		return $this->constrant($left, $op, $right);
+	public function __call($method, array $args) {
+		if( ! in_array($method, ['and', 'or'])) {
+			throw new \RuntimeException('Undefined method.');
+		}
+
+		$args[] = strtoupper($method);
+
+		return call_user_func_array([$this, 'constrant'], $args);
 	}
 
 	public function __invoke($left, $op, $right) {
 		return $this->constrant($left, $op, $right);
-	}
-
-	public function or($left, $op, $right) {
-		return $this->constrant($left, $op, $right, 'OR');
 	}
 
 	public function nest($type = 'AND') {

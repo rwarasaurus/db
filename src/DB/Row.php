@@ -27,7 +27,7 @@ class Row implements RowInterface, \Serializable, \JsonSerializable {
 	 * @return mixed
 	 */
 	public function __get($key) {
-		return isset($this->$key) ? $this->attributes[$key] : null;
+		return array_key_exists($key, $this->attributes) ? $this->attributes[$key] : null;
 	}
 
 	/**

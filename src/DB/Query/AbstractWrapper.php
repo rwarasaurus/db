@@ -32,7 +32,7 @@ abstract class AbstractWrapper {
 
 		// if we find a dot notation thats not the first character we treat
 		// it as a column definition
-		if(is_string($value) && strpos($value, '.')) {
+		if(is_string($value) && preg_match('#^[A-z0-9-_]+\.[A-z0-9-_]+(\.[A-z0-9-_]+)?$#', $value)) {
 			return $this->grammar->column($value);
 		}
 

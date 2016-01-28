@@ -22,6 +22,8 @@ class Query implements QueryInterface {
 
 	protected $start;
 
+	protected $cache;
+
 	public function __construct(PDO $pdo, RowInterface $prototype = null, ResultInterface $result = null, GrammarInterface $grammar = null, BuilderInterface $builder = null) {
 		$this->pdo = $pdo;
 		$this->prototype = null === $prototype ? new Row : $prototype;
@@ -80,9 +82,7 @@ class Query implements QueryInterface {
 
 		$this->reset();
 
-		$return = clone $this->result;
-
-		return $return->withResult($result)->withStatement($sth);
+		return $this->result->withResult($result)->withStatement($sth);
 	}
 
 	protected function start() {
@@ -144,19 +144,49 @@ class Query implements QueryInterface {
 		return $response->getResult() ? $response->getStatement()->rowCount() : false;
 	}
 
-	public function get() {
-		$response = $this->exec($this->builder->getSqlString(), $this->builder->getBindings());
-		$statement = $response->getStatement();
+	protected function getCacheKey($sql, array $values) {
+		return sprintf('cached.select.%s.%s',
+			hash('crc32', $sql),
+			hash('crc32', implode('', $values))
+		);
+	}
 
-		$results = [];
+	protected function getCachedResults($key) {
+		$results = $this->cache->get($key);
 
-		while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
-			$results[] = $this->hydrate($row);
+		return empty($results) ? false : $this->hydrateBufferedResults($results);
+	}
+
+	protected function hydrateBufferedResults(array $results) {
+		foreach(array_keys($results) as $index) {
+			$results[$index] = $this->hydrate($results[$index]);
 		}
 
-		$statement->closeCursor();
-
 		return $results;
+	}
+
+	protected function setCache($cache) {
+		$this->cache = $cache;
+	}
+
+	public function get() {
+		$sql = $this->builder->getSqlString();
+		$values = $this->builder->getBindings();
+
+		if($this->cache) {
+			$key = $this->getCacheKey($sql, $values);
+			$results = $this->getCachedResults($key);
+
+			if($results) return $results;
+		}
+
+		$statement = $this->exec($sql, $values)->getStatement();
+
+		$results = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+		if($this->cache) $this->cache->set($key, $results);
+
+		return $this->hydrateBufferedResults($results);
 	}
 
 	public function fetch() {

@@ -22,8 +22,6 @@ class Query implements QueryInterface {
 
 	protected $start;
 
-	protected $cache;
-
 	public function __construct(PDO $pdo, RowInterface $prototype = null, ResultInterface $result = null, GrammarInterface $grammar = null, BuilderInterface $builder = null) {
 		$this->pdo = $pdo;
 		$this->prototype = null === $prototype ? new Row : $prototype;
@@ -82,7 +80,7 @@ class Query implements QueryInterface {
 
 		$this->reset();
 
-		return $this->result->withResult($result)->withStatement($sth);
+		return (clone $this->result)->withResult($result)->withStatement($sth);
 	}
 
 	protected function start() {
@@ -144,63 +142,40 @@ class Query implements QueryInterface {
 		return $response->getResult() ? $response->getStatement()->rowCount() : false;
 	}
 
-	protected function getCacheKey($sql, array $values) {
-		return sprintf('cached.select.%s.%s',
-			hash('crc32', $sql),
-			hash('crc32', implode('', $values))
-		);
-	}
+	public function get($buffered = true) {
+		$statement = $this->exec($this->builder->getSqlString(), $this->builder->getBindings())->getStatement();
 
-	protected function getCachedResults($key) {
-		$results = $this->cache->get($key);
+		if(false === $buffered) return $statement;
 
-		return empty($results) ? false : $this->hydrateBufferedResults($results);
-	}
+		$results = [];
 
-	protected function hydrateBufferedResults(array $results) {
-		foreach(array_keys($results) as $index) {
-			$results[$index] = $this->hydrate($results[$index]);
+		while($row = $statement->fetch(PDO::FETCH_ASSOC)) {
+			$results[] = $this->hydrate($row);
 		}
+
+		$statement->closeCursor();
 
 		return $results;
 	}
 
-	protected function setCache($cache) {
-		$this->cache = $cache;
-	}
-
-	public function get() {
-		$sql = $this->builder->getSqlString();
-		$values = $this->builder->getBindings();
-
-		if($this->cache) {
-			$key = $this->getCacheKey($sql, $values);
-			$results = $this->getCachedResults($key);
-
-			if($results) return $results;
-		}
-
-		$statement = $this->exec($sql, $values)->getStatement();
-
-		$results = $statement->fetchAll(PDO::FETCH_ASSOC);
-
-		if($this->cache) $this->cache->set($key, $results);
-
-		return $this->hydrateBufferedResults($results);
-	}
-
 	public function fetch() {
-		$response = $this->exec($this->builder->getSqlString(), $this->builder->getBindings());
+		$statement = $this->exec($this->builder->getSqlString(), $this->builder->getBindings())->getStatement();
 
-		$row = $response->getStatement()->fetch(PDO::FETCH_ASSOC);
+		$row = $statement->fetch(PDO::FETCH_ASSOC);
 
-		return is_array($row) ? $this->hydrate($row) : false;
+		$statement->closeCursor();
+
+		return $row ? $this->hydrate($row) : false;
 	}
 
 	public function column($column = 0) {
-		$response = $this->exec($this->builder->getSqlString(), $this->builder->getBindings());
+		$statement = $this->exec($this->builder->getSqlString(), $this->builder->getBindings())->getStatement();
 
-		return $response->getStatement()->fetchColumn($column);
+		$value = $statement->fetchColumn($column);
+
+		$statement->closeCursor();
+
+		return $value;
 	}
 
 	public function count($column = '*') {

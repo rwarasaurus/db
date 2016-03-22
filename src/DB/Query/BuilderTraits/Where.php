@@ -38,8 +38,20 @@ trait Where {
 		return $this;
 	}
 
+	public function orWhereIn($column, array $values) {
+		$this->where->orIn($column, $values);
+
+		return $this;
+	}
+
 	public function whereNotIn($column, array $values) {
 		$this->where->notIn($column, $values);
+
+		return $this;
+	}
+
+	public function orWhereNotIn($column, array $values) {
+		$this->where->orNotIn($column, $values);
 
 		return $this;
 	}

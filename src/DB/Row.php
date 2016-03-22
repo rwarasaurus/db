@@ -84,7 +84,7 @@ class Row implements RowInterface, \Serializable, \JsonSerializable {
 	 * @return string
 	 */
 	public function __toString() {
-		return $this->jsonSerialize();
+		return json_encode($this->jsonSerialize());
 	}
 
 	/**
@@ -93,7 +93,7 @@ class Row implements RowInterface, \Serializable, \JsonSerializable {
 	 * @return string
 	 */
 	public function jsonSerialize() {
-		return json_encode($this->attributes);
+		return $this->toArray();
 	}
 
 	/**

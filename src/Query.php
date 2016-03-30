@@ -142,10 +142,8 @@ class Query implements QueryInterface {
 		return $response->getResult() ? $response->getStatement()->rowCount() : false;
 	}
 
-	public function get($buffered = true) {
+	public function get() {
 		$statement = $this->exec($this->builder->getSqlString(), $this->builder->getBindings())->getStatement();
-
-		if(false === $buffered) return $statement;
 
 		$results = [];
 

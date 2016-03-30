@@ -10,6 +10,7 @@ class Grammar implements GrammarInterface {
 
 	protected $supported = [
 		'mysql' => '`%s`',
+		'pgsql' => '"%s"',
 		'sqlite' => '"%s"',
 	];
 

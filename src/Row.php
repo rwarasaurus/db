@@ -2,7 +2,7 @@
 
 namespace DB;
 
-class Row implements RowInterface, \Serializable, \JsonSerializable {
+class Row implements RowInterface, \JsonSerializable {
 
 	/**
 	 * Row attributes
@@ -12,12 +12,19 @@ class Row implements RowInterface, \Serializable, \JsonSerializable {
 	protected $attributes;
 
 	/**
+	 * Attributes that should never be public
+	 *
+	 * @var array
+	 */
+	protected $guarded = [];
+
+	/**
 	 * Active Record constructor
 	 *
 	 * @param array
 	 */
-	public function __construct(array $attributes = null) {
-		$this->attributes = null === $attributes ? [] : $attributes;
+	public function __construct(array $attributes = []) {
+		$this->attributes = $attributes;
 	}
 
 	/**
@@ -27,7 +34,7 @@ class Row implements RowInterface, \Serializable, \JsonSerializable {
 	 * @return mixed
 	 */
 	public function __get($key) {
-		return array_key_exists($key, $this->attributes) ? $this->attributes[$key] : null;
+		return $this->attributes[$key];
 	}
 
 	/**
@@ -61,24 +68,6 @@ class Row implements RowInterface, \Serializable, \JsonSerializable {
 	}
 
 	/**
-	 * Serialize attributes
-	 *
-	 * @return string
-	 */
-	public function serialize() {
-		return serialize($this->attributes);
-	}
-
-	/**
-	 * Unserialize attributes
-	 *
-	 * @param string
-	 */
-	public function unserialize($data) {
-		$this->attributes = unserialize($data);
-	}
-
-	/**
 	 * Convert to string (json)
 	 *
 	 * @return string
@@ -100,7 +89,7 @@ class Row implements RowInterface, \Serializable, \JsonSerializable {
 	 * Return attributes
 	 */
 	public function toArray() {
-		return $this->attributes;
+		return array_diff_key($this->attributes, $this->guarded);
 	}
 
 }

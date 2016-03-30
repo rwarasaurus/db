@@ -9,7 +9,7 @@ trait Join {
 	public function join($table, $left, $op, $right, $type = 'INNER') {
 		$join = new \DB\Query\Join($table, $type, $this->grammar);
 
-		$this->joins[] = $join->constrant($left, $op, $right);
+		$this->joins[] = $join->constraint($left, $op, $right);
 
 		return $this;
 	}
@@ -36,7 +36,7 @@ trait Join {
 		$join = new \DB\Query\Join($table, $type, $this->grammar);
 
 		foreach($columns as $left => $right) {
-			$join->constrant($left, '=', $right);
+			$join->constraint($left, '=', $right);
 		}
 
 		$this->joins[] = $join;

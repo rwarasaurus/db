@@ -2,7 +2,7 @@
 	"name": "rwarasaurus/db",
 	"description": "DBAL",
 	"license": "GPL-3.0",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"type": "library",
 	"authors": [
 		{
@@ -12,15 +12,16 @@
 		}
 	],
 	"require": {
-		"php": ">=5.5"
+		"php": ">=7",
+		"ext-json": "*",
+		"ext-pdo": "*"
 	},
 	"require-dev": {
-		"phpspec/phpspec": "~2.4.0-beta",
-		"fzaninotto/faker": "v1.5.0"
+		"phpspec/phpspec": "~2.4.0-beta"
 	},
 	"autoload": {
 		"psr-4": {
-			"": "src"
+			"DB\\": "src/"
 		}
 	},
 	"config": {

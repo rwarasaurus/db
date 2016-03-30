@@ -10,7 +10,7 @@ class Join extends AbstractWrapper implements FragmentInterface, BindingsInterfa
 
 	protected $grammar;
 
-	protected $constrants;
+	protected $constraints;
 
 	protected $bindings;
 
@@ -21,16 +21,16 @@ class Join extends AbstractWrapper implements FragmentInterface, BindingsInterfa
 		$this->type = $type;
 		$this->grammar = $grammar;
 		$this->needsConjunction = false;
-		$this->constrants = [];
+		$this->constraints = [];
 		$this->bindings = [];
 	}
 
-	public function constrant($left, $op, $right, $type = 'AND') {
+	public function constraint($left, $op, $right, $type = 'AND') {
 		if($this->needsConjunction) {
-			$this->constrants[] = $type;
+			$this->constraints[] = $type;
 		}
 
-		$this->constrants[] = sprintf('%s %s %s', $this->grammar->column($left), $op, $this->wrap($right));
+		$this->constraints[] = sprintf('%s %s %s', $this->grammar->column($left), $op, $this->wrap($right));
 
 		$this->needsConjunction = true;
 
@@ -38,7 +38,7 @@ class Join extends AbstractWrapper implements FragmentInterface, BindingsInterfa
 	}
 
 	public function __invoke($left, $op, $right) {
-		return $this->constrant($left, $op, $right);
+		return $this->constraint($left, $op, $right);
 	}
 
 	public function __call($method, array $args) {
@@ -48,15 +48,15 @@ class Join extends AbstractWrapper implements FragmentInterface, BindingsInterfa
 
 		$args[] = strtoupper($method);
 
-		return call_user_func_array([$this, 'constrant'], $args);
+		return call_user_func_array([$this, 'constraint'], $args);
 	}
 
 	public function getSqlString() {
 		$table = $this->table instanceof BuilderInterface ? $this->wrap($this->table) : $this->grammar->wrap($this->table);
 
-		$constrants = implode(' ', $this->constrants);
+		$constraints = implode(' ', $this->constraints);
 
-		return sprintf('%s JOIN %s ON(%s)', $this->type, $table, $constrants);
+		return sprintf('%s JOIN %s ON(%s)', $this->type, $table, $constraints);
 	}
 
 	public function getBindings() {

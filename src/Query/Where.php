@@ -8,7 +8,7 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 
 	protected $grammar;
 
-	protected $constrants;
+	protected $constraints;
 
 	protected $bindings;
 
@@ -17,16 +17,16 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 	public function __construct(GrammarInterface $grammar) {
 		$this->grammar = $grammar;
 		$this->needsConjunction = false;
-		$this->constrants = [];
+		$this->constraints = [];
 		$this->bindings = [];
 	}
 
-	public function constrant($left, $op, $right, $type = 'AND') {
+	public function constraint($left, $op, $right, $type = 'AND') {
 		if($this->needsConjunction) {
-			$this->constrants[] = $type;
+			$this->constraints[] = $type;
 		}
 
-		$this->constrants[] = sprintf('%s %s %s', $this->grammar->column($left), $op, $this->wrap($right));
+		$this->constraints[] = sprintf('%s %s %s', $this->grammar->column($left), $op, $this->wrap($right));
 
 		$this->needsConjunction = true;
 
@@ -40,19 +40,19 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 
 		$args[] = strtoupper($method);
 
-		return call_user_func_array([$this, 'constrant'], $args);
+		return call_user_func_array([$this, 'constraint'], $args);
 	}
 
 	public function __invoke($left, $op, $right) {
-		return $this->constrant($left, $op, $right);
+		return $this->constraint($left, $op, $right);
 	}
 
 	public function nest($type = 'AND') {
 		if($this->needsConjunction) {
-			$this->constrants[] = $type;
+			$this->constraints[] = $type;
 		}
 
-		$this->constrants[] = '(';
+		$this->constraints[] = '(';
 
 		$this->needsConjunction = false;
 
@@ -60,7 +60,7 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 	}
 
 	public function unnest() {
-		$this->constrants[] = ')';
+		$this->constraints[] = ')';
 
 		$this->needsConjunction = true;
 
@@ -68,49 +68,49 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 	}
 
 	public function in($column, array $values) {
-		return $this->constrant($column, 'IN', $values);
+		return $this->constraint($column, 'IN', $values);
 	}
 
 	public function orIn($column, array $values) {
-		return $this->constrant($column, 'IN', $values, 'OR');
+		return $this->constraint($column, 'IN', $values, 'OR');
 	}
 
 	public function notIn($column, array $values) {
-		return $this->constrant($column, 'NOT IN', $values);
+		return $this->constraint($column, 'NOT IN', $values);
 	}
 
 	public function orNotIn($column, array $values) {
-		return $this->constrant($column, 'NOT IN', $values, 'OR');
+		return $this->constraint($column, 'NOT IN', $values, 'OR');
 	}
 
 	public function inQuery($column, BuilderInterface $query) {
-		return $this->constrant($column, 'IN', $query);
+		return $this->constraint($column, 'IN', $query);
 	}
 
 	public function notInQuery($column, BuilderInterface $query) {
-		return $this->constrant($column, 'NOT IN', $query);
+		return $this->constraint($column, 'NOT IN', $query);
 	}
 
 	public function isNull($column) {
-		return $this->constrant($column, 'IS', null);
+		return $this->constraint($column, 'IS', null);
 	}
 
 	public function orIsNull($column) {
-		return $this->constrant($column, 'IS', null, 'OR');
+		return $this->constraint($column, 'IS', null, 'OR');
 	}
 
 	public function isNotNull($column) {
-		return $this->constrant($column, 'IS NOT', null);
+		return $this->constraint($column, 'IS NOT', null);
 	}
 
 	public function orIsNotNull($column) {
-		return $this->constrant($column, 'IS NOT', null, 'OR');
+		return $this->constraint($column, 'IS NOT', null, 'OR');
 	}
 
 	public function getSqlString() {
-		if(empty($this->constrants)) return '';
+		if(empty($this->constraints)) return '';
 
-		return 'WHERE ' . implode(' ', $this->constrants);
+		return 'WHERE ' . implode(' ', $this->constraints);
 	}
 
 	public function getBindings() {

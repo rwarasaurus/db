@@ -2,7 +2,7 @@
 
 namespace DB;
 
-interface RowInterface {
+interface RowInterface extends \JsonSerializable, \Serializable {
 
 	public function __get($column);
 

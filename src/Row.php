@@ -2,7 +2,7 @@
 
 namespace DB;
 
-class Row implements RowInterface, \JsonSerializable {
+class Row implements RowInterface {
 
 	/**
 	 * Row attributes
@@ -73,7 +73,7 @@ class Row implements RowInterface, \JsonSerializable {
 	 * @return string
 	 */
 	public function __toString() {
-		return json_encode($this->jsonSerialize());
+		return json_encode($this->toArray());
 	}
 
 	/**
@@ -83,6 +83,22 @@ class Row implements RowInterface, \JsonSerializable {
 	 */
 	public function jsonSerialize() {
 		return $this->toArray();
+	}
+
+	/**
+	 * Convert to serialize
+	 *
+	 * @return string
+	 */
+	public function serialize() {
+		return serialize($this->attributes);
+	}
+
+	/**
+	 * Extract attributes from serialized string
+	 */
+	public function unserialize($serialized) {
+		$this->attributes = unserialize($serialized);
 	}
 
 	/**

@@ -30,7 +30,7 @@ class Join extends AbstractWrapper implements FragmentInterface, BindingsInterfa
 			$this->constraints[] = $type;
 		}
 
-		$this->constraints[] = sprintf('%s %s %s', $this->grammar->column($left), $op, $this->wrap($right));
+		$this->constraints[] = sprintf('%s %s %s', $this->grammar->column($left), $op, $this->grammar->column($right));
 
 		$this->needsConjunction = true;
 
@@ -43,7 +43,7 @@ class Join extends AbstractWrapper implements FragmentInterface, BindingsInterfa
 
 	public function __call($method, array $args) {
 		if( ! in_array($method, ['and', 'or'])) {
-			throw new \RuntimeException('Undefined method.');
+			throw new \RuntimeException(sprintf('Undefined method "%s".', $method));
 		}
 
 		$args[] = strtoupper($method);

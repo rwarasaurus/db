@@ -72,6 +72,8 @@ class Builder implements BuilderInterface {
 
 	public function setAlias($alias) {
 		$this->alias = $alias;
+
+		return $this;
 	}
 
 	public function getAlias() {

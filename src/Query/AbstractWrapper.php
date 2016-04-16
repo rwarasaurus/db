@@ -30,12 +30,6 @@ abstract class AbstractWrapper {
 			return sprintf('(%s)', $this->grammar->placeholders($value));
 		}
 
-		// if we find a dot notation thats not the first character we treat
-		// it as a column definition
-		if(is_string($value) && preg_match('#^[A-z0-9-_]+\.[A-z0-9-_]+(\.[A-z0-9-_]+)?$#', $value)) {
-			return $this->grammar->column($value);
-		}
-
 		// otherwise we treat it as a single raw value
 		$this->bindings[] = $value;
 		return '?';

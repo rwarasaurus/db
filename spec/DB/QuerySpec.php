@@ -165,12 +165,11 @@ class QuerySpec extends ObjectBehavior {
 			->where('authors.id', '=', 6)
 			->joinColumns('authors', [
 				'authors.id' => 'books.author',
-				'authors.name' => 'foo',
 			])
 			->where('books.title', 'NOT LIKE', 'bar');
 
-		$this->getBuilder()->getSqlString()->shouldBeEqualTo('SELECT * FROM "books" INNER JOIN "authors" ON("authors"."id" = "books"."author" AND "authors"."name" = ?) WHERE "authors"."id" = ? AND "books"."title" NOT LIKE ?');
-		$this->getBuilder()->getBindings()->shouldBeEqualTo(['foo', 6, 'bar']);
+		$this->getBuilder()->getSqlString()->shouldBeEqualTo('SELECT * FROM "books" INNER JOIN "authors" ON("authors"."id" = "books"."author") WHERE "authors"."id" = ? AND "books"."title" NOT LIKE ?');
+		$this->getBuilder()->getBindings()->shouldBeEqualTo([6, 'bar']);
 	}
 
 }

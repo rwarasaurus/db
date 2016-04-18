@@ -20,6 +20,10 @@ class Builder implements BuilderInterface {
 
 	protected $table;
 
+	protected $where;
+
+	protected $joins;
+
 	protected $group;
 
 	protected $sort;
@@ -41,6 +45,10 @@ class Builder implements BuilderInterface {
 		$this->where = clone $this->where;
 		$this->group = clone $this->group;
 		$this->sort = clone $this->sort;
+
+		foreach($this->joins as &$join) {
+			$join = clone $join;
+		}
 	}
 
 	public function reset() {

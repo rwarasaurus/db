@@ -8,13 +8,15 @@ class Join extends AbstractWrapper implements FragmentInterface, BindingsInterfa
 
 	protected $table;
 
+	protected $type;
+
 	protected $grammar;
+
+	protected $needsConjunction;
 
 	protected $constraints;
 
 	protected $bindings;
-
-	protected $needsConjunction;
 
 	public function __construct($table, $type, GrammarInterface $grammar) {
 		$this->table = $table;

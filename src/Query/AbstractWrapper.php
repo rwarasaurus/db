@@ -26,7 +26,7 @@ abstract class AbstractWrapper {
 
 		// if the value is an array treat it as raw values
 		if(is_array($value)) {
-			$this->bindings = array_merge($this->bindings, $value);
+			$this->bindings = array_merge($this->bindings, array_values($value));
 			return sprintf('(%s)', $this->grammar->placeholders($value));
 		}
 

@@ -39,6 +39,18 @@ class Join extends AbstractWrapper implements FragmentInterface, BindingsInterfa
 		return $this;
 	}
 
+	public function where($left, $op, $right, $type = 'AND') {
+		if($this->needsConjunction) {
+			$this->constraints[] = $type;
+		}
+
+		$this->constraints[] = sprintf('%s %s %s', $this->grammar->column($left), $op, $this->wrap($right));
+
+		$this->needsConjunction = true;
+
+		return $this;
+	}
+
 	public function __invoke($left, $op, $right) {
 		return $this->constraint($left, $op, $right);
 	}
@@ -54,7 +66,8 @@ class Join extends AbstractWrapper implements FragmentInterface, BindingsInterfa
 	}
 
 	public function getSqlString() {
-		$table = $this->table instanceof BuilderInterface ? $this->wrap($this->table) : $this->grammar->wrap($this->table);
+		$table = $this->table instanceof BuilderInterface ?
+			$this->wrap($this->table) : $this->grammar->wrap($this->table);
 
 		$constraints = implode(' ', $this->constraints);
 

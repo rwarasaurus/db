@@ -53,7 +53,16 @@ abstract class AbstractTable implements TableInterface {
 	 * @return object
 	 */
 	public function __call($method, array $args) {
-		return call_user_func_array([$this->query->table($this->name)->prototype($this->prototype), $method], $args);
+		return call_user_func_array([$this->query(), $method], $args);
+	}
+
+	/**
+	 * Start a new query on the Query Builder
+	 *
+	 * @return object
+	 */
+	public function query() {
+		return $this->query->table($this->name)->prototype($this->prototype);
 	}
 
 	/**

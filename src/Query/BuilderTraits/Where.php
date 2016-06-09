@@ -6,6 +6,22 @@ trait Where {
 
 	protected $where;
 
+	public function nest(\Closure $predicate) {
+		$this->where->nest();
+		$predicate($this);
+		$this->where->unnest();
+
+		return $this;
+	}
+
+	public function orNest(\Closure $predicate) {
+		$this->where->nest('OR');
+		$predicate($this);
+		$this->where->unnest();
+
+		return $this;
+	}
+
 	public function where($left, $op, $right) {
 		$this->where->and($left, $op, $right);
 

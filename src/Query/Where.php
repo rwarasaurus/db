@@ -87,8 +87,16 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 		return $this->constraint($column, 'IN', $query);
 	}
 
+	public function orInQuery($column, BuilderInterface $query) {
+		return $this->constraint($column, 'IN', $query, 'OR');
+	}
+
 	public function notInQuery($column, BuilderInterface $query) {
 		return $this->constraint($column, 'NOT IN', $query);
+	}
+
+	public function orNotInQuery($column, BuilderInterface $query) {
+		return $this->constraint($column, 'NOT IN', $query, 'OR');
 	}
 
 	public function isNull($column) {

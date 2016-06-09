@@ -62,8 +62,20 @@ trait Where {
 		return $this;
 	}
 
+	public function orWhereInQuery($column, \Closure $predicate) {
+		$this->where->orInQuery($column, $this->subQuery($predicate));
+
+		return $this;
+	}
+
 	public function whereNotInQuery($column, \Closure $predicate) {
 		$this->where->notInQuery($column, $this->subQuery($predicate));
+
+		return $this;
+	}
+
+	public function orWhereNotInQuery($column, \Closure $predicate) {
+		$this->where->orNotInQuery($column, $this->subQuery($predicate));
 
 		return $this;
 	}

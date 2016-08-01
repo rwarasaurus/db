@@ -14,12 +14,14 @@
 	"require": {
 		"php": ">=7",
 		"ext-json": "*",
-		"ext-pdo": "*",
-		"php-ds/php-ds": "~1"
+		"ext-pdo": "*"
 	},
 	"require-dev": {
 		"phpspec/phpspec": "~2"
 	},
+    "scripts": {
+        "test": "php ./bin/phpspec run"
+    },
 	"autoload": {
 		"psr-4": {
 			"DB\\": "src/"

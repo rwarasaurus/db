@@ -4,53 +4,9 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "e27ccb39d4fe20ad435aeb4da78932af",
-    "content-hash": "e72d8108084c105ce805df8f539d1a32",
-    "packages": [
-        {
-            "name": "php-ds/php-ds",
-            "version": "v1.0.3",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/php-ds/polyfill.git",
-                "reference": "5f2caa8240888f4c88bea565e22ba8e7dbcbe85e"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/php-ds/polyfill/zipball/5f2caa8240888f4c88bea565e22ba8e7dbcbe85e",
-                "reference": "5f2caa8240888f4c88bea565e22ba8e7dbcbe85e",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=7.0.0"
-            },
-            "require-dev": {
-                "php-ds/tests": "1.0.*"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Ds\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Rudi Theunissen",
-                    "email": "rudolf.theunissen@gmail.com"
-                }
-            ],
-            "keywords": [
-                "data structures",
-                "php",
-                "polyfill"
-            ],
-            "time": "2016-08-01 06:01:11"
-        }
-    ],
+    "hash": "2061ea88595b576f508d9ef2dac17ba9",
+    "content-hash": "40c36971ed3a8b6671798837dc50442a",
+    "packages": [],
     "packages-dev": [
         {
             "name": "doctrine/instantiator",

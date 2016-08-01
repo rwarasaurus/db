@@ -1,6 +1,6 @@
 <?php
 
-namespace DB\Query\BuilderTraits;
+namespace DB\Query\Traits;
 
 trait Where {
 

@@ -172,4 +172,12 @@ class QuerySpec extends ObjectBehavior {
 		$this->getBuilder()->getBindings()->shouldBeEqualTo([6, 'bar']);
 	}
 
+	public function it_should_use_full_text_search() {
+		$this->table('books')
+			->matchAgainst('foo', ['books.author']);
+
+		$this->getBuilder()->getSqlString()->shouldBeEqualTo('SELECT * FROM "books" WHERE MATCH("books"."author") AGAINST(? IN NATURAL LANGUAGE MODE)');
+		$this->getBuilder()->getBindings()->shouldBeEqualTo(['foo']);
+	}
+
 }

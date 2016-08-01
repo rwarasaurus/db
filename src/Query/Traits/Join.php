@@ -1,13 +1,15 @@
 <?php
 
-namespace DB\Query\BuilderTraits;
+namespace DB\Query\Traits;
+
+use DB\Query\Join as JoinQuery;
 
 trait Join {
 
 	protected $joins;
 
 	public function join($table, $left, $op, $right, $type = 'INNER') {
-		$join = new \DB\Query\Join($table, $type, $this->grammar);
+		$join = new JoinQuery($table, $type, $this->grammar);
 
 		$this->joins[] = $join->constraint($left, $op, $right);
 
@@ -19,7 +21,7 @@ trait Join {
 	}
 
 	public function joinWhere($table, \Closure $predicate, $type = 'INNER') {
-		$join = new \DB\Query\Join($table, $type, $this->grammar);
+		$join = new JoinQuery($table, $type, $this->grammar);
 
 		$predicate($join);
 
@@ -33,7 +35,7 @@ trait Join {
 	}
 
 	public function joinColumns($table, array $columns, $type = 'INNER') {
-		$join = new \DB\Query\Join($table, $type, $this->grammar);
+		$join = new JoinQuery($table, $type, $this->grammar);
 
 		foreach($columns as $left => $right) {
 			$join->constraint($left, '=', $right);

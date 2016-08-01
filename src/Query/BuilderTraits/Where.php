@@ -120,4 +120,16 @@ trait Where {
 		return $this;
 	}
 
+	public function matchAgainst(string $keywords, array $columns) {
+		$this->where->match($keywords, $columns);
+
+		return $this;
+	}
+
+	public function orMatchAgainst(string $keywords, array $columns) {
+		$this->where->orMatch($keywords, $columns);
+
+		return $this;
+	}
+
 }

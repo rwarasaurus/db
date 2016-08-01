@@ -33,6 +33,23 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 		return $this;
 	}
 
+	public function match(string $keywords, array $columns, $type = 'AND') {
+		if($this->needsConjunction) {
+			$this->constraints[] = $type;
+		}
+
+		$this->constraints[] = sprintf('MATCH(%s) AGAINST(%s IN NATURAL LANGUAGE MODE)',
+			$this->grammar->columns($columns), $this->wrap($keywords));
+
+		$this->needsConjunction = true;
+
+		return $this;
+	}
+
+	public function orMatch(string $keywords, array $columns) {
+		return $this->match($keywords, $columns, 'OR');
+	}
+
 	public function __call($method, array $args) {
 		if( ! in_array($method, ['and', 'or'])) {
 			throw new \RuntimeException('Undefined method.');

@@ -3,10 +3,12 @@
 namespace DB\Query;
 
 use DB\GrammarInterface;
+use BuilderTraits\Where as BuildWheres;
+use BuilderTraits\Join as BuildJoins;
 
 class Builder implements BuilderInterface {
 
-	use BuilderTraits\Where, BuilderTraits\Join;
+	use BuildWheres, BuildJoins;
 
 	protected $grammar;
 

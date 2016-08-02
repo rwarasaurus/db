@@ -4,7 +4,10 @@ namespace DB;
 
 use PDO;
 use PDOException;
+
 use DB\Query\Expression;
+use DB\Query\Builder;
+use DB\Query\BuilderInterface;
 
 class Query implements QueryInterface {
 
@@ -32,8 +35,21 @@ class Query implements QueryInterface {
 			$grammar = new Grammar($driver);
 		}
 
+		$this->setGrammar($grammar);
+
+		if(null === $builder) {
+			$builder = new Builder($this->getGrammar());
+		}
+
+		$this->setBuilder($builder);
+	}
+
+	public function getGrammar() {
+		return $this->grammar;
+	}
+
+	public function setGrammar(GrammarInterface $grammar) {
 		$this->grammar = $grammar;
-		$this->builder = null === $builder ? new Query\Builder($grammar) : $builder;
 	}
 
 	public function getBuilder() {

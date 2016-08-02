@@ -2,7 +2,6 @@
 	"name": "rwarasaurus/db",
 	"description": "DBAL",
 	"license": "GPL-3.0",
-	"version": "0.0.5",
 	"type": "library",
 	"authors": [
 		{

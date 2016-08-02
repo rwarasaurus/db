@@ -62,7 +62,7 @@ class Builder implements BuilderInterface {
 		$this->where = new Where($this->grammar);
 		$this->joins = [];
 		$this->group = new Group($this->grammar);
-		$this->sort = new Sort($this->grammar);
+		$this->resetSort();
 		$this->limit = null;
 		$this->offset = null;
 		$this->alias = null;
@@ -122,6 +122,12 @@ class Builder implements BuilderInterface {
 
 	public function sortField($field, array $keys) {
 		$this->sort->field($field, $keys);
+
+		return $this;
+	}
+
+	public function resetSort() {
+		$this->sort = new Sort($this->grammar);
 
 		return $this;
 	}

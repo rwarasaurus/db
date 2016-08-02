@@ -179,7 +179,7 @@ class Query implements QueryInterface {
 	public function count($column = '*') {
 		$func = sprintf('COUNT(%s)', $this->grammar->column($column));
 
-		$this->builder->select([$func]);
+		$this->builder->select([$func])->resetSort();
 
 		return $this->column();
 	}

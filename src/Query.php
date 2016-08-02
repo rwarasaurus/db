@@ -200,9 +200,9 @@ class Query implements QueryInterface {
 		return $this->modify($column, -1);
 	}
 
-	protected function modify($column, $amount) {
+	protected function modify(string $column, int $amount): bool {
 		return $this->update([
-			$column => new Expression(sprintf('%s + %d', $this->grammar->column($column), $amount))
+			$column => new Expression(sprintf('%s + %d', $this->grammar->column($column), $amount)),
 		]);
 	}
 

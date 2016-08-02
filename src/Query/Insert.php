@@ -18,7 +18,7 @@ class Insert implements FragmentInterface, BindingsInterface {
 		$this->values = $values;
 	}
 
-	public function getSqlString() {
+	public function getSqlString(): string {
 		$table = $this->grammar->wrap($this->table);
 
 		$columns = $this->grammar->columns(array_keys($this->values));
@@ -28,7 +28,7 @@ class Insert implements FragmentInterface, BindingsInterface {
 		return sprintf('INSERT INTO %s (%s) VALUES(%s)', $table, $columns, $placeholders);
 	}
 
-	public function getBindings() {
+	public function getBindings(): array {
 		return array_values($this->values);
 	}
 

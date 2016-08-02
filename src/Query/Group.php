@@ -15,12 +15,14 @@ class Group implements FragmentInterface {
 		$this->columns = [];
 	}
 
-	public function by($column) {
+	public function by(string $column) {
 		$this->columns[] = $this->grammar->column($column);
 	}
 
-	public function getSqlString() {
-		if(empty($this->columns)) return '';
+	public function getSqlString(): string {
+		if(empty($this->columns)) {
+			return '';
+		}
 
 		return sprintf('GROUP BY %s', implode(', ', $this->columns));
 	}

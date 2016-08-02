@@ -4,6 +4,6 @@ namespace DB\Query;
 
 interface BindingsInterface {
 
-	public function getBindings();
+	public function getBindings(): array;
 
 }

@@ -10,9 +10,10 @@ abstract class AbstractWrapper {
 			return 'NULL';
 		}
 
-		// if expression use as literal value
+		// if expression use get bindinsg and sql string
 		if($value instanceof Expression) {
-			return (string) $value;
+			$this->bindings = array_merge($this->bindings, $value->getBindings());
+			return $value->getSqlString();
 		}
 
 		// if its a subquery

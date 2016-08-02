@@ -19,9 +19,15 @@ class Select implements FragmentInterface {
 		$this->columns = $columns;
 	}
 
-	public function getSqlString() {
+	public function getSqlString(): string {
 		if(empty($this->columns)) {
 			$this->columns = ['*'];
+		}
+
+		foreach(array_keys($this->columns) as $index) {
+			if($this->columns[$index] instanceof FragmentInterface) {
+				$this->columns[$index] = $this->columns[$index]->getSqlString();
+			}
 		}
 
 		return sprintf('SELECT %s', $this->grammar->columns($this->columns));

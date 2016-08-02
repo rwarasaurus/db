@@ -162,7 +162,7 @@ class Builder implements BuilderInterface {
 		return $this;
 	}
 
-	public function getSqlString() {
+	public function getSqlString(): string {
 		$fragments = [];
 
 		if($this->insert) {
@@ -206,7 +206,7 @@ class Builder implements BuilderInterface {
 		return implode(' ', array_filter($fragments));
 	}
 
-	public function getBindings() {
+	public function getBindings(): array {
 		if($this->insert) {
 			$bindings = $this->insert->getBindings();
 		}

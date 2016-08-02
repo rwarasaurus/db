@@ -2,15 +2,15 @@
 
 namespace DB\Query;
 
-class Expression {
+class Expression implements FragmentInterface {
 
 	protected $string;
 
-	public function __construct($string) {
+	public function __construct(string $string) {
 		$this->string = $string;
 	}
 
-	public function __toString() {
+	public function getSqlString(): string {
 		return $this->string;
 	}
 

@@ -4,6 +4,6 @@ namespace DB\Query;
 
 interface FragmentInterface {
 
-	public function getSqlString();
+	public function getSqlString(): string;
 
 }

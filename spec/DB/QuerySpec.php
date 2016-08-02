@@ -180,4 +180,13 @@ class QuerySpec extends ObjectBehavior {
 		$this->getBuilder()->getBindings()->shouldBeEqualTo(['foo']);
 	}
 
+	public function it_should_run_expresions(\DB\Query\FragmentInterface $expresion) {
+		$expresion->getSqlString()->willReturn('COUNT(*)');
+
+		$this->table('books')->select([$expresion]);
+
+		$this->getBuilder()->getSqlString()->shouldBeEqualTo('SELECT COUNT(*) FROM "books"');
+		$this->getBuilder()->getBindings()->shouldBeEqualTo([]);
+	}
+
 }

@@ -24,8 +24,8 @@ class Update implements FragmentInterface, BindingsInterface {
 
 	public function setValues(array $values) {
 		foreach($values as $key => $value) {
-			if($value instanceof Expression) {
-				$this->values[] = sprintf('%s = %s', $this->grammar->column($key), $value);
+			if($value instanceof FragmentInterface) {
+				$this->values[] = sprintf('%s = %s', $this->grammar->column($key), $value->getSqlString());
 			}
 			else {
 				$this->values[] = sprintf('%s = ?', $this->grammar->column($key));
@@ -34,7 +34,7 @@ class Update implements FragmentInterface, BindingsInterface {
 		}
 	}
 
-	public function getSqlString() {
+	public function getSqlString(): string {
 		$table = $this->grammar->wrap($this->table);
 
 		$placeholders = implode(', ', $this->values);
@@ -42,7 +42,7 @@ class Update implements FragmentInterface, BindingsInterface {
 		return sprintf('UPDATE %s SET %s', $table, $placeholders);
 	}
 
-	public function getBindings() {
+	public function getBindings(): array {
 		return $this->bindings;
 	}
 

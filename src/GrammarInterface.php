@@ -4,12 +4,12 @@ namespace DB;
 
 interface GrammarInterface {
 
-	public function columns(array $columns);
+	public function columns(array $columns): string;
 
-	public function column($str);
+	public function column(string $str): string;
 
-	public function wrap($str);
+	public function wrap(string $str): string;
 
-	public function placeholders(array $items);
+	public function placeholders(array $items): string;
 
 }

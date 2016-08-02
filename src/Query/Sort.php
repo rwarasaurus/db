@@ -15,16 +15,18 @@ class Sort implements FragmentInterface {
 		$this->columns = [];
 	}
 
-	public function by($column, $mode = 'asc') {
+	public function by(string $column, string $mode = 'asc') {
 		$this->columns[] = sprintf('%s %s', $this->grammar->column($column), strtoupper($mode));
 	}
 
-	public function field($field, array $keys) {
+	public function field(string $field, array $keys) {
 		$this->columns[] = sprintf('FIELD(%s, %s)', $this->grammar->column($field), implode(', ', $keys));
 	}
 
-	public function getSqlString() {
-		if(empty($this->columns)) return '';
+	public function getSqlString(): string {
+		if(empty($this->columns)) {
+			return '';
+		}
 
 		return sprintf('ORDER BY %s', implode(', ', $this->columns));
 	}

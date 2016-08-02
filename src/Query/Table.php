@@ -17,7 +17,7 @@ class Table extends AbstractWrapper implements FragmentInterface, BindingsInterf
 		$this->bindings = [];
 	}
 
-	public function name() {
+	public function name(): string {
 		if($this->table instanceof BuilderInterface) {
 			throw new \RuntimeException('Table name is a query');
 		}
@@ -25,11 +25,11 @@ class Table extends AbstractWrapper implements FragmentInterface, BindingsInterf
 		return $this->table;
 	}
 
-	public function from($table) {
+	public function from(string $table) {
 		$this->table = $table;
 	}
 
-	public function getSqlString() {
+	public function getSqlString(): string {
 		if(null === $this->table) {
 			throw new \InvalidArgumentException('Table name has not been set');
 		}
@@ -39,7 +39,7 @@ class Table extends AbstractWrapper implements FragmentInterface, BindingsInterf
 		return sprintf('FROM %s', $table);
 	}
 
-	public function getBindings() {
+	public function getBindings(): array {
 		return $this->bindings;
 	}
 

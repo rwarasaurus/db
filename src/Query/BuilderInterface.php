@@ -2,4 +2,8 @@
 
 namespace DB\Query;
 
-interface BuilderInterface extends FragmentInterface, BindingsInterface {}
+interface BuilderInterface extends FragmentInterface, BindingsInterface {
+
+	public function getAlias();
+
+}

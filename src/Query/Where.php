@@ -21,12 +21,13 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 		$this->bindings = [];
 	}
 
-	public function constraint($left, $op, $right, $type = 'AND') {
+	public function constraint(string $left, string $op, $right, string $type = 'AND') {
 		if($this->needsConjunction) {
 			$this->constraints[] = $type;
 		}
 
-		$this->constraints[] = sprintf('%s %s %s', $this->grammar->column($left), $op, $this->wrap($right));
+		$this->constraints[] = sprintf('%s %s %s',
+			$this->grammar->column($left), $op, $this->wrap($right));
 
 		$this->needsConjunction = true;
 
@@ -50,7 +51,7 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 		return $this->match($keywords, $columns, $mode, 'OR');
 	}
 
-	public function __call($method, array $args) {
+	public function __call(string $method, array $args) {
 		if( ! in_array($method, ['and', 'or'])) {
 			throw new \RuntimeException('Undefined method.');
 		}
@@ -64,7 +65,7 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 		return $this->constraint($left, $op, $right);
 	}
 
-	public function nest($type = 'AND') {
+	public function nest(string $type = 'AND') {
 		if($this->needsConjunction) {
 			$this->constraints[] = $type;
 		}
@@ -132,13 +133,13 @@ class Where extends AbstractWrapper implements FragmentInterface, BindingsInterf
 		return $this->constraint($column, 'IS NOT', null, 'OR');
 	}
 
-	public function getSqlString() {
+	public function getSqlString(): string {
 		if(empty($this->constraints)) return '';
 
 		return 'WHERE ' . implode(' ', $this->constraints);
 	}
 
-	public function getBindings() {
+	public function getBindings(): array {
 		return $this->bindings;
 	}
 

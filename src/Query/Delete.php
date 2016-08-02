@@ -15,7 +15,7 @@ class Delete implements FragmentInterface {
 		$this->table = $table;
 	}
 
-	public function getSqlString() {
+	public function getSqlString(): string {
 		$table = $this->grammar->wrap($this->table);
 
 		return sprintf('DELETE FROM %s', $table);

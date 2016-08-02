@@ -65,7 +65,7 @@ class Join extends AbstractWrapper implements FragmentInterface, BindingsInterfa
 		return call_user_func_array([$this, 'constraint'], $args);
 	}
 
-	public function getSqlString() {
+	public function getSqlString(): string {
 		$table = $this->table instanceof BuilderInterface ?
 			$this->wrap($this->table) : $this->grammar->wrap($this->table);
 
@@ -74,7 +74,7 @@ class Join extends AbstractWrapper implements FragmentInterface, BindingsInterfa
 		return sprintf('%s JOIN %s ON(%s)', $this->type, $table, $constraints);
 	}
 
-	public function getBindings() {
+	public function getBindings(): array {
 		return $this->bindings;
 	}
 

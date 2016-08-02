@@ -22,11 +22,11 @@ class Grammar implements GrammarInterface {
 		$this->wrapper = $this->supported[$driver];
 	}
 
-	public function columns(array $columns) {
+	public function columns(array $columns): string {
 		return implode(', ', array_map([$this, 'column'], $columns));
 	}
 
-	public function column($str) {
+	public function column(string $str): string {
 		// handle alias
 		if(strpos($str, $this->aliasPattern)) {
 			return $this->alias($str);
@@ -41,11 +41,7 @@ class Grammar implements GrammarInterface {
 		return $this->wrap($column) . $this->aliasPattern . $this->wrap($alias);
 	}
 
-	public function wrap($str) {
-		if( ! is_string($str)) {
-			throw new \InvalidArgumentException(sprintf('Argument should be a string, %s given.', gettype($str)));
-		}
-
+	public function wrap(string $str): string {
 		// dont wrap expressions
 		if(preg_match('#(\*|\(|\)|\+|\-|\s)#', $str)) {
 			return $str;
@@ -60,7 +56,7 @@ class Grammar implements GrammarInterface {
 		return implode('.', $formatted);
 	}
 
-	public function placeholders(array $items) {
+	public function placeholders(array $items): string {
 		return implode(', ', array_fill(0, count($items), '?'));
 	}
 

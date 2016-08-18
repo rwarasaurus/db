@@ -172,6 +172,10 @@ class Query implements QueryInterface {
 		return $results;
 	}
 
+	public function getCollection() {
+		return new Collection($this->get());
+	}
+
 	public function fetch() {
 		$statement = $this->exec($this->builder->getSqlString(), $this->builder->getBindings())->getStatement();
 

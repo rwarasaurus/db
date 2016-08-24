@@ -95,6 +95,14 @@ class Collection implements \Iterator, \Countable {
 		return $newCollection;
 	}
 
+	public function getValues(): array {
+		return $this->values;
+	}
+
+	public function getKeys(): array {
+		return $this->keys;
+	}
+
 	public function toArray(): array {
 		return array_combine($this->keys, $this->values);
 	}

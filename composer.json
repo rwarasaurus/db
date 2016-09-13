@@ -13,7 +13,8 @@
 	"require": {
 		"php": ">=7",
 		"ext-json": "*",
-		"ext-pdo": "*"
+		"ext-pdo": "*",
+		"php-ds/php-ds": "~1"
 	},
 	"require-dev": {
 		"phpspec/phpspec": "~2"

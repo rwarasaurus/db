@@ -55,16 +55,16 @@ class Collection implements \Iterator, \Countable {
 		return count($this->keys);
 	}
 
-	public function map(callable $callback): self {
-		$newCollection = new static;
+	public function map(callable $callback): Collection {
+		$newCollection = new Collection;
 		foreach($this->toArray() as $key => $value) {
 			$newCollection->append($callback($value, $key), $key);
 		}
 		return $newCollection;
 	}
 
-	public function filter(callable $callback): self {
-		$newCollection = new static;
+	public function filter(callable $callback): Collection {
+		$newCollection = new Collection;
 		foreach($this->toArray() as $key => $value) {
 			if($callback($value, $key)) {
 				$newCollection->append($value, $key);
@@ -81,14 +81,14 @@ class Collection implements \Iterator, \Countable {
 		return $carry;
 	}
 
-	public function extract(array $keys): self {
+	public function extract(array $keys): Collection {
 		return $this->filter(function($value, $key) use($keys) {
 			return in_array($key, $keys);
 		});
 	}
 
-	public function reindex(callable $callback): self {
-		$newCollection = new static;
+	public function reindex(callable $callback): Collection {
+		$newCollection = new Collection;
 		foreach($this->toArray() as $key => $value) {
 			$newCollection->append($value, $callback($value, $key));
 		}

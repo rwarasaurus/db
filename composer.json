@@ -1,32 +1,32 @@
 {
-	"name": "rwarasaurus/db",
-	"description": "DBAL",
-	"license": "GPL-3.0",
-	"type": "library",
-	"authors": [
-		{
-			"name": "Kieron",
-			"homepage": "http://madebykieron.co.uk",
-			"role": "Developer"
-		}
-	],
-	"require": {
-		"php": ">=7",
-		"ext-json": "*",
-		"ext-pdo": "*"
-	},
-	"require-dev": {
-		"phpspec/phpspec": "~2"
-	},
+    "name": "rwarasaurus/db",
+    "description": "DBAL",
+    "license": "GPL-3.0",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Kieron",
+            "homepage": "http://madebykieron.co.uk",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=7",
+        "ext-json": "*",
+        "ext-pdo": "*"
+    },
+    "require-dev": {
+        "phpspec/phpspec": "~2"
+    },
     "scripts": {
         "test": "php ./bin/phpspec run"
     },
-	"autoload": {
-		"psr-4": {
-			"DB\\": "src/"
-		}
-	},
-	"config": {
-		"bin-dir": "bin/"
-	}
+    "autoload": {
+        "psr-4": {
+            "DB\\": "src/"
+        }
+    },
+    "config": {
+        "bin-dir": "bin/"
+    }
 }
